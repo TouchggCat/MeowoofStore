@@ -1,0 +1,61 @@
+﻿@model IEnumerable<MeowoofStore.Models.Product>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>產品管理清單</h1>
+
+<p>
+    <a asp-action="Create">新增產品</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Name)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Description)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Price)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Stock)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ImageString)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                <img src="~/Images/ProductImages/@item.ImageString" width="100" height="100" />
+            <br />
+                @Html.DisplayFor(modelItem => item.Name)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Description)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Price)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Stock)
+            </td>
+            <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-success">修改</a> |
+                @*@Html.ActionLink("刪除", "Delete", "Products", new { id = item.Id ,imageString=item.ImageString},
+                new { onclick = "return confirm('確定刪除?')", Class = "btn btn-danger" })*@
+                <a asp-controller="Products" asp-action="Delete" asp-route-id="@item.Id" 
+                asp-route-imageString="@item.ImageString" onclick="return confirm('確定刪除?')" 
+                class="btn btn-danger">刪除</a> 
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

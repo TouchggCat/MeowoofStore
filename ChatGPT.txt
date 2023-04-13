@@ -1,0 +1,14 @@
+此 Index Action為ProductsController的內容
+原先我在Models 中 設定 Product class 裡的Name屬性為
+public string? Name { get; set; }
+當時新增了1筆Name為Null的資料
+後來加入了[Required]的Annotation後如下
+    public class Product
+    {
+        public int Id { get; set; }
+        [Required]
+        public string? Name { get; set; }
+        public string? Description { get; set; }
+}
+我的網頁會回傳錯誤並顯示為null
+請問是啥問題

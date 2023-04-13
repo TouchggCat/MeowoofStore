@@ -1,0 +1,95 @@
+﻿@model IEnumerable<MeowoofStore.Models.Product>
+@{
+    ViewData["Title"] = "產品管理";
+}
+
+<h1>產品管理清單</h1>
+
+<p>
+    <a asp-action="Create">新增產品</a>
+</p>
+<table class="table" id="productsTable">
+    <thead>
+        <tr>
+            <th scope="col">
+                品名
+            </th>
+            <th scope="col">
+                描述
+            </th>
+            <th scope="col">
+                價格
+            </th>
+            <th scope="col">
+                庫存
+            </th>
+            <th scope="col">
+                圖片
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                <img src="~/Images/ProductImages/@item.ImageString" width="100" height="100" />
+            <br />
+                @Html.DisplayFor(modelItem => item.Name)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Description)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Price)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Stock)
+            </td>
+            <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-success">修改</a> |
+                <a class="btn btn-danger js-delete" product-id="@item.Id">刪除</a> 
+            </td>
+        </tr>
+}
+    </tbody>
+</table>
+@section scripts{
+    <script>
+        $(document).ready(function () {
+            //$("#productsTable").DataTable({
+            //    ajax:{
+            //        url: "/api/Products/",
+            //        dataSrc: ""
+            //    },
+
+            //        language: {
+            //        search: "搜尋",
+            //        emptyTable: "無資料",
+            //        info: "顯示 _START_ 至 _END_ 筆資料，共 _TOTAL_ 筆",
+            //        lengthMenu: "顯示 _MENU_ 筆資料",
+            //        paginate: {
+            //            "first": "First",
+            //            "last": "Last",
+            //            "next": "下一頁",
+            //            "previous": "上一頁"
+            //        }
+            //    }
+            //});
+            $("#productsTable").on("click", " .js-delete", function () {
+                var deleteButton  =$(this);
+                 if(confirm("確定要刪除嗎? 要確定欸!??")){
+                     console.log("gggg");
+                     $.ajax({
+                        url: "api/Products/" + $(this).attr("product-id"),
+                        method:"Delete",
+                        success:function(){
+                            console.log("Success Deleted");
+                            deleteButton.parents("tr").remove();
+                        }
+                     });
+                 }
+            });
+        });
+    </script>
+}
