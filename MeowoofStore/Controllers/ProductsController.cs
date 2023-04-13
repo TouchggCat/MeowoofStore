@@ -27,9 +27,10 @@ namespace MeowoofStore.Controllers
         // GET: Products
         public async Task<IActionResult> Index()
         {
-              return _context.Product != null ? 
-                          View(await _context.Product.ToListAsync()) :
-                          Problem("Entity set 'ApplicationDbContext.Product'  is null.");
+            //return _context.Product != null ? 
+            //            View(await _context.Product.ToListAsync()) :
+            //            Problem("Entity set 'ApplicationDbContext.Product'  is null.");  //Razor View
+            return View();
         }
 
         // GET: Products/Details/5

@@ -1,5 +1,6 @@
 ﻿using MeowoofStore.Data;
 using MeowoofStore.Models;
+using MeowoofStore.Models.StringKeys;
 using MeowoofStore.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -46,6 +47,10 @@ namespace MeowoofStore.Controllers.Api
             if (!ModelState.IsValid)
                 return BadRequest();
 
+            if (viewModel.Photo != null)
+            {
+                SaveProductPhoto(viewModel, FolderPath._Images_ProductImages);
+            }
             Product product = new Product()
             {
                 Name = viewModel.Name,
@@ -62,16 +67,37 @@ namespace MeowoofStore.Controllers.Api
         }
 
         [HttpDelete("{id}")]
-        public ActionResult DeleteProductsById(int id)
+        public ActionResult DeleteProductsById(int id ,string imageString)
         {
             var products = _context.Product.SingleOrDefault(m => m.Id == id);
 
             if (products == null)
                 return NotFound();
-
+            if (!String.IsNullOrEmpty(imageString))
+                DeleteProductPhoto(FolderPath._Images_ProductImages, imageString);
             _context.Product.Remove(products);
             _context.SaveChanges();
             return NoContent();
+        }
+
+        private void SaveProductPhoto(ProductViewModel viewModel, string folderPath)
+        {
+            string photoName = Guid.NewGuid().ToString() + ".jpg";
+            viewModel.ImageString = photoName;
+            //抓路徑 IWebHostEnvironment(見下方)
+            using(var stream = new FileStream(_environment.WebRootPath + folderPath + photoName, FileMode.Create))
+            {
+                viewModel.Photo.CopyTo(stream);
+            }
+        }
+
+        private void DeleteProductPhoto(string folderPath, string photoName)
+        {
+            string filePath = Path.Combine(_environment.WebRootPath + folderPath, photoName);
+            if (System.IO.File.Exists(filePath))
+            {
+                System.IO.File.Delete(filePath);
+            }
         }
     }
 }
