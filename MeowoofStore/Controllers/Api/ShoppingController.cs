@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using MeowoofStore.Data;
+using MeowoofStore.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MeowoofStore.Controllers.Api
@@ -7,5 +9,21 @@ namespace MeowoofStore.Controllers.Api
     [ApiController]
     public class ShoppingController : ControllerBase
     {
+        private ApplicationDbContext _context { get; set; }
+        public ShoppingController(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        [HttpGet]
+        public ActionResult<IEnumerable<Product>> GetShoppingList()
+        {
+            var products = _context.Product;
+
+            if (products == null)
+                return NotFound("沒有任何商品");
+
+            return products;
+        }
     }
 }
