@@ -1,7 +1,5 @@
-﻿@model IEnumerable<MeowoofStore.Models.Product>
-
-@{
-    ViewData["Title"] = "List";
+﻿@{
+    ViewData["Title"] = "商品清單";
 }
 
 <h1>商品清單</h1>
@@ -9,44 +7,81 @@
 <p>
     <a asp-action="CartView" class="btn btn-primary">查看我的購物車</a>
 </p>
-<table class="table">
+<table class="table" id="shoppingList">
     <thead>
         <tr>
             <th>
-                @Html.DisplayNameFor(model => model.Name)
+                圖片
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Description)
+                品名
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Price)
+                描述
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Stock)
+                價格
             </th>
-            <th></th>
+            <th>
+                庫存
+            </th>
+            <th>
+                加入購物車
+            </th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-            <img src="~/Images/ProductImages/@item.ImageString" width="100" height="100" />
-                @Html.DisplayFor(modelItem => item.Name)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Description)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Price)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Stock)
-            </td>
-            <td>
-                    <a asp-action="AddToCart" asp-route-id="@item.Id" class="btn btn-info">加入購物車</a>
-            </td>
-        </tr>
-}
     </tbody>
 </table>
+@section scripts{
+    <script>
+        $(document).ready(function(){
+            $("#shoppingList").DataTable({
+                ajax:{
+                    url:"/api/Shopping/",
+                    dataSrc:""
+                },
+                columns:[
+                    {
+                        data: "imageString",
+                        render:function(data){
+                            return "<img src='/Images/ProductImages/" + data + "' width='100' height ='100'/>"
+                        }
+                    },
+                    {
+                        data:"name"
+                    },
+                    {
+                        data: "description",
+                    },
+                    {
+                        data: "price",
+                    },
+                    {
+                        data: "stock",
+                    },
+                    {
+                        data:"id",
+                        render:function(data){
+                            return "<a href='/Shopping/AddToCart/"+ data+"' class='btn btn-info'> 加入購物車 </a>"
+                        }
+                    }
+                ],
+                language: {
+                    search: "搜尋",
+                    emptyTable: "無資料",
+                    info: "顯示 _START_ 至 _END_ 筆資料，共 _TOTAL_ 筆",
+                    "infoFiltered": " ，已由 _MAX_ 筆資料中過濾",
+                    lengthMenu: "顯示 _MENU_ 筆資料",
+                    paginate: {
+                        "first": "First",
+                        "last": "Last",
+                        "next": "下一頁",
+                        "previous": "上一頁"
+                    }
+                }
+            });
+        });
+
+    </script>
+}
