@@ -111,7 +111,6 @@ namespace MeowoofStore.Controllers
             if (viewModel.Photo != null)
             {
                 SavePhoto(viewModel, FolderPath._Images_ProductImages);
-                product.ImageString = viewModel.ImageString;
             }
             var productMapper = _lMapper.Map(viewModel,product);
 
@@ -131,8 +130,8 @@ namespace MeowoofStore.Controllers
 
             if(!String.IsNullOrEmpty(imageString))
                 DeletePhoto(FolderPath._Images_ProductImages, imageString);
-            _context.Product.Remove(product);
 
+            _context.Product.Remove(product);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
