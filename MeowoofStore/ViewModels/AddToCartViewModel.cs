@@ -17,6 +17,6 @@ namespace MeowoofStore.ViewModels
         [DisplayName("購買數量")]
         [NumberMaxValidator(ErrorMessage = "請輸入1到9999數量")]
         [Required(ErrorMessage = "請輸入數量")]
-        public int count { get; set; }
+        public int Quantity { get; set; }
     }
 }

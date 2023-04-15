@@ -10,6 +10,7 @@ using MeowoofStore.Models;
 using MeowoofStore.ViewModels;
 using Microsoft.CodeAnalysis;
 using MeowoofStore.Models.StringKeys;
+using AutoMapper;
 
 namespace MeowoofStore.Controllers
 {
@@ -17,19 +18,18 @@ namespace MeowoofStore.Controllers
     {
         private IWebHostEnvironment _environment; //取路徑用
         private readonly ApplicationDbContext _context;
+        private readonly IMapper _lMapper;
 
-        public ProductsController(ApplicationDbContext context, IWebHostEnvironment environment)
+        public ProductsController(ApplicationDbContext context, IWebHostEnvironment environment,IMapper mapper)
         {
             _context = context;
             _environment = environment;
+            _lMapper = mapper;
         }
 
         // GET: Products
         public async Task<IActionResult> Index()
         {
-            //return _context.Product != null ? 
-            //            View(await _context.Product.ToListAsync()) :
-            //            Problem("Entity set 'ApplicationDbContext.Product'  is null.");  //Razor View
             return View();
         }
 
@@ -67,20 +67,13 @@ namespace MeowoofStore.Controllers
             {
                 SavePhoto(viewModel, FolderPath._Images_ProductImages);
             }
-            Product product = new Product
-            {
-                Name = viewModel.Name,
-                Stock = viewModel.Stock,
-                Price = viewModel.Price,
-                Description = viewModel.Description,
-                ImageString = viewModel.ImageString
-            };
+
+            var product =_lMapper.Map<Product>(viewModel);
             _context.Add(product);
                 await _context.SaveChangesAsync();
+
                 return RedirectToAction(nameof(Index));
         }
-
-
 
         // GET: Products/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -92,14 +85,7 @@ namespace MeowoofStore.Controllers
             if (product == null)
                 return View("NullView");
 
-            ProductViewModel viewModel = new ProductViewModel()
-            {
-                Name = product.Name,
-                Description = product.Description,
-                Price = product.Price,
-                Stock = product.Stock,
-                ImageString = product.ImageString
-            };
+            var viewModel = _lMapper.Map<ProductViewModel>(product);
             return View(viewModel);
         }
 
@@ -120,19 +106,16 @@ namespace MeowoofStore.Controllers
             if (product == null)
                 return View("NullView");
 
-            product.Description = viewModel.Description;
-            product.Price = viewModel.Price;
-            product.Name = viewModel.Name;
-            product.Stock = viewModel.Stock;
-            product.ImageString = viewModel.ImageString;
-            if(viewModel.Photo != null&& viewModel.ImageString!=null)
+            if (viewModel.Photo != null&& viewModel.ImageString!=null)
                 DeletePhoto(FolderPath._Images_ProductImages, viewModel.ImageString);
             if (viewModel.Photo != null)
             {
                 SavePhoto(viewModel, FolderPath._Images_ProductImages);
                 product.ImageString = viewModel.ImageString;
             }
-            _context.Update(product);
+            var productMapper = _lMapper.Map(viewModel,product);
+
+            _context.Update(productMapper);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
@@ -152,11 +135,6 @@ namespace MeowoofStore.Controllers
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool ProductExists(int id)
-        {
-          return (_context.Product?.Any(e => e.Id == id)).GetValueOrDefault();
         }
 
         private void SavePhoto(ProductViewModel viewModel, string folderPath)

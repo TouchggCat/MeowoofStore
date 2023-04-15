@@ -1,4 +1,5 @@
-﻿using MeowoofStore.Data;
+﻿using AutoMapper;
+using MeowoofStore.Data;
 using MeowoofStore.Models;
 using MeowoofStore.Models.StringKeys;
 using MeowoofStore.ViewModels;
@@ -13,16 +14,18 @@ namespace MeowoofStore.Controllers.Api
     {
         private IWebHostEnvironment _environment; //取路徑用
         private readonly ApplicationDbContext _context;
+        private readonly IMapper _iMapper;
 
-        public ProductsController(ApplicationDbContext context, IWebHostEnvironment environment)
+        public ProductsController(ApplicationDbContext context, IWebHostEnvironment environment,IMapper mapper)
         {
             _context = context;
             _environment = environment;
+            _iMapper = mapper;
         }
         [HttpGet]
         public ActionResult<IEnumerable<Product>> GetProducts()
         {
-            var products = _context.Product.ToList().Select(n=>n);
+            var products = _context.Product;
 
             if (products == null)
                 return NotFound();

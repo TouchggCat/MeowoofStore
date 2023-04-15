@@ -11,15 +11,18 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using AutoMapper;
 
 namespace MeowoofStore.Controllers
 {
     public class ShoppingController : Controller
     {
-        private ApplicationDbContext _context { get; set; }
-        public ShoppingController(ApplicationDbContext context)
+        private readonly ApplicationDbContext _context;
+        private readonly IMapper _lMapper;
+        public ShoppingController(ApplicationDbContext context,IMapper mapper)
         {
             _context= context;
+            _lMapper= mapper;
         }
         public IActionResult List()
         {
@@ -31,15 +34,13 @@ namespace MeowoofStore.Controllers
         }
         public IActionResult AddToCart(int id) 
         {
-            int defaultCount = 1;
-            AddToCartViewModel viewModel=new AddToCartViewModel();
+            int defaultQuantity = 1;
+            //AddToCartViewModel viewModel=new AddToCartViewModel();
             var product = _context.Product.SingleOrDefault(n => n.Id == id);
             if(product != null)
             {
-                viewModel.id = product.Id;
-                viewModel.price = product.Price;
-                viewModel.Name = product.Name;
-                viewModel.count = defaultCount;
+                var viewModel = _lMapper.Map<AddToCartViewModel>(product);
+                viewModel.Quantity = defaultQuantity;
                 return View(viewModel);
             }
 
@@ -62,14 +63,10 @@ namespace MeowoofStore.Controllers
                 jsonString = HttpContext.Session.GetString(ShoppingCartSessionKey.ShoppingCartListKey);
                 shoppingCartItemList = JsonSerializer.Deserialize<List<ShoppingCartItem>>(jsonString);
             }
-            ShoppingCartItem shoppingCartItem = new ShoppingCartItem()
-            {
-                Id = viewModel.id,
-                Price = viewModel.price,
-                ProductId = viewModel.id,
-                Quantity = viewModel.count,
-                Product = product
-            };
+
+            var shoppingCartItem=_lMapper.Map<ShoppingCartItem>(viewModel);
+            shoppingCartItem.Product=product;
+
             shoppingCartItemList.Add(shoppingCartItem);
             jsonString = JsonSerializer.Serialize(shoppingCartItemList);
             HttpContext.Session.SetString(ShoppingCartSessionKey.ShoppingCartListKey, jsonString);
