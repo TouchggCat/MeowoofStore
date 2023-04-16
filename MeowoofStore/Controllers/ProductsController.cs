@@ -11,20 +11,21 @@ using MeowoofStore.ViewModels;
 using Microsoft.CodeAnalysis;
 using MeowoofStore.Models.StringKeys;
 using AutoMapper;
+using MeowoofStore.Models.Utilities;
 
 namespace MeowoofStore.Controllers
 {
     public class ProductsController : Controller
     {
-        private IWebHostEnvironment _environment; //取路徑用
         private readonly ApplicationDbContext _context;
         private readonly IMapper _lMapper;
+        private readonly PhotoProcess _photoProcess;          //需在Program.cs 註冊 PhotoProcess 服務
 
-        public ProductsController(ApplicationDbContext context, IWebHostEnvironment environment,IMapper mapper)
+        public ProductsController(ApplicationDbContext context,IMapper mapper, PhotoProcess photoProcess)
         {
             _context = context;
-            _environment = environment;
             _lMapper = mapper;
+            _photoProcess = photoProcess;
         }
 
         // GET: Products
@@ -65,7 +66,8 @@ namespace MeowoofStore.Controllers
             
             if(viewModel.Photo!=null)
             {
-                SavePhoto(viewModel, FolderPath._Images_ProductImages);
+                _photoProcess.CreatePhoto<ProductViewModel>(viewModel, FolderPath._Images_ProductImages,
+                nameof(viewModel.Photo), nameof(viewModel.ImageString));
             }
 
             var product =_lMapper.Map<Product>(viewModel);
@@ -107,10 +109,11 @@ namespace MeowoofStore.Controllers
                 return View("NullView");
 
             if (viewModel.Photo != null&& viewModel.ImageString!=null)
-                DeletePhoto(FolderPath._Images_ProductImages, viewModel.ImageString);
+                _photoProcess.DeletePhoto(FolderPath._Images_ProductImages, viewModel.ImageString);
             if (viewModel.Photo != null)
             {
-                SavePhoto(viewModel, FolderPath._Images_ProductImages);
+                _photoProcess.CreatePhoto<ProductViewModel>(viewModel, FolderPath._Images_ProductImages, 
+                nameof(viewModel.Photo), nameof(viewModel.ImageString));
             }
             var productMapper = _lMapper.Map(viewModel,product);
 
@@ -129,27 +132,13 @@ namespace MeowoofStore.Controllers
                 return View("NullView");
 
             if(!String.IsNullOrEmpty(imageString))
-                DeletePhoto(FolderPath._Images_ProductImages, imageString);
+                _photoProcess.DeletePhoto(FolderPath._Images_ProductImages, imageString);
 
             _context.Product.Remove(product);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private void SavePhoto(ProductViewModel viewModel, string folderPath)
-        {
-            string photoName = Guid.NewGuid().ToString() + ".jpg";
-            viewModel.ImageString = photoName;
-            //抓路徑 IWebHostEnvironment(見下方)
-            viewModel.Photo.CopyTo(new FileStream(_environment.WebRootPath + folderPath + photoName, FileMode.Create));
-        }
-        private void DeletePhoto(string folderPath, string photoName)
-        {
-            string filePath = Path.Combine(_environment.WebRootPath+ folderPath, photoName);
-            if (System.IO.File.Exists(filePath))
-            {
-                System.IO.File.Delete(filePath);
-            }
-        }
+
     }
 }

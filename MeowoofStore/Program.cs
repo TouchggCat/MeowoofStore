@@ -1,4 +1,5 @@
 using MeowoofStore.Data;
+using MeowoofStore.Models.Utilities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,6 +20,8 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddAutoMapper(typeof(Program));
+
+builder.Services.AddScoped<PhotoProcess>();
 
 var app = builder.Build();
 app.UseSession(); // Using Session
