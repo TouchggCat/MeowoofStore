@@ -12,9 +12,11 @@ using Microsoft.CodeAnalysis;
 using MeowoofStore.Models.StringKeys;
 using AutoMapper;
 using MeowoofStore.Models.Utilities;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MeowoofStore.Controllers
 {
+    [Authorize(Roles ="Administrator")]
     public class ProductsController : Controller
     {
         private readonly ApplicationDbContext _context;

@@ -12,9 +12,11 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MeowoofStore.Controllers
 {
+    [Authorize]
     public class ShoppingController : Controller
     {
         private readonly ApplicationDbContext _context;
