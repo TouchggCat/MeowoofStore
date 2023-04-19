@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using MeowoofStore.ViewModels;
 using Microsoft.EntityFrameworkCore;
+using MeowoofStore.Models.StringKeys;
 
 namespace MeowoofStore.Controllers
 {
@@ -16,6 +17,35 @@ namespace MeowoofStore.Controllers
         {
             _context=context;
         }
+
+        public async Task<IActionResult> Register()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register(Member member)
+        {
+            if (!ModelState.IsValid)
+                return View(member);
+
+            member.RoleId = Member.CustomerRole;
+            _context.Member.Add(member);
+            await _context.SaveChangesAsync();
+
+            var identity = new ClaimsIdentity(new[]
+    {
+            new Claim(ClaimTypes.Name, member.memberName),
+            new Claim(ClaimTypes.Email, member.email),
+        }, CookieAuthenticationDefaults.AuthenticationScheme);
+
+            var principal = new ClaimsPrincipal(identity);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+            return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);
+        }
+
         public IActionResult Login()
         {
             return View();
@@ -44,15 +74,13 @@ namespace MeowoofStore.Controllers
             };
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
-            string ControllerName="Home";
-            return RedirectToAction(nameof(HomeController.Index), ControllerName);
+            return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);    
         }
 
         public async Task<IActionResult> LogOut()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            string ControllerName = "Home";
-            return RedirectToAction(nameof(HomeController.Index), ControllerName);
+            return RedirectToAction(nameof(HomeController.Index), HomeController.ControllerName);
         }
 
         public IActionResult AccessDeny()

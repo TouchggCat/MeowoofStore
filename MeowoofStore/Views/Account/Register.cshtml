@@ -1,37 +1,43 @@
 ﻿@model MeowoofStore.Models.Member
 
 @{
-    ViewData["Title"] = "MeowWoof-登入";
+    ViewData["Title"] = "MeowWoof-註冊";
 }
 
-<h1>會員登入</h1>
+<h1>註冊會員</h1>
 
-<h4>請輸入帳號密碼</h4>
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="Login">
+        <form asp-action="Register">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="form-group">
                 <label asp-for="email" class="control-label"></label>
-                <input asp-for="email" class="form-control" autocomplete="current-username" />
+                <input asp-for="email" class="form-control" />
                 <span asp-validation-for="email" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="password" class="control-label"></label>
-                <input asp-for="password" class="form-control" autocomplete="current-password" type="password" />
+                <input asp-for="password" class="form-control" />
                 <span asp-validation-for="password" class="text-danger"></span>
             </div>
+            <div class="form-group">
+                <label asp-for="memberName" class="control-label"></label>
+                <input asp-for="memberName" class="form-control" />
+                <span asp-validation-for="memberName" class="text-danger"></span>
+            </div>
             <br />
-
             <div class="form-group">
                 @Html.AntiForgeryToken()
-                <input type="submit" value="登入" class="btn btn-primary" />
+                <input type="submit" value="註冊" class="btn btn-primary" />
             </div>
         </form>
     </div>
 </div>
 
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}

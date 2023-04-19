@@ -40,12 +40,12 @@ namespace MeowoofStore.Controllers
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null || _context.Product == null)
-                return View("NullView");
+                return View(ViewName.NullView);
 
             var product = await _context.Product
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (product == null)
-                return View("NullView");
+                return View(ViewName.NullView);
 
             return View(product);
         }
@@ -83,11 +83,11 @@ namespace MeowoofStore.Controllers
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null || _context.Product == null)
-                return View("NullView");
+                return View(ViewName.NullView);
 
             var product = await _context.Product.FindAsync(id);
             if (product == null)
-                return View("NullView");
+                return View(ViewName.NullView);
 
             var viewModel = _lMapper.Map<ProductViewModel>(product);
             return View(viewModel);
@@ -101,14 +101,14 @@ namespace MeowoofStore.Controllers
         public async Task<IActionResult> Edit(int id, ProductViewModel viewModel)
         {
             if (id != viewModel.Id)
-                return View("NullView");
+                return View(ViewName.NullView);
 
             if (!ModelState.IsValid)
                 return View(viewModel);
 
             Product? product = _context.Product.FirstOrDefault(n => n.Id == viewModel.Id);
             if (product == null)
-                return View("NullView");
+                return View(ViewName.NullView);
 
             if (viewModel.Photo != null&& viewModel.ImageString!=null)
                 _photoProcess.DeletePhoto(FolderPath._Images_ProductImages, viewModel.ImageString);
@@ -127,11 +127,11 @@ namespace MeowoofStore.Controllers
         public async Task<IActionResult> Delete(int? id, string imageString)
         {
             if (id == null || _context.Product == null)
-                return View("NullView");
+                return View(ViewName.NullView);
 
             var product = await _context.Product.FirstOrDefaultAsync(m => m.Id == id);
             if (product == null)
-                return View("NullView");
+                return View(ViewName.NullView);
 
             if(!String.IsNullOrEmpty(imageString))
                 _photoProcess.DeletePhoto(FolderPath._Images_ProductImages, imageString);

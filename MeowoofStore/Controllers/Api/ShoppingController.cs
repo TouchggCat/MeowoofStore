@@ -21,7 +21,7 @@ namespace MeowoofStore.Controllers.Api
             var products = _context.Product;
 
             if (products == null)
-                return NotFound("沒有任何商品");
+                return NotFound("No product !");
 
             return products;
         }

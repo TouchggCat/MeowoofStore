@@ -32,7 +32,7 @@ namespace MeowoofStore.Controllers
             if(products != null )
                return View(products);
 
-            return View("NullView");
+            return View(ViewName.NullView);
         }
         public IActionResult AddToCart(int id) 
         {
@@ -46,7 +46,7 @@ namespace MeowoofStore.Controllers
                 return View(viewModel);
             }
 
-            return View("NullView");
+            return View(ViewName.NullView);
         }
 
         [HttpPost]
@@ -54,7 +54,7 @@ namespace MeowoofStore.Controllers
         {
             var product = _context.Product.SingleOrDefault(n => n.Id == viewModel.id);
             if (product == null)
-                return View("NullView");
+                return View(ViewName.NullView);
 
             string? jsonString = "";
             List<ShoppingCartItem>? shoppingCartItemList = null;
@@ -72,7 +72,7 @@ namespace MeowoofStore.Controllers
             shoppingCartItemList.Add(shoppingCartItem);
             jsonString = JsonSerializer.Serialize(shoppingCartItemList);
             HttpContext.Session.SetString(ShoppingCartSessionKey.ShoppingCartListKey, jsonString);
-            return RedirectToAction("List");
+            return RedirectToAction(nameof(List));
         }
 
         public IActionResult CartView()
@@ -84,7 +84,7 @@ namespace MeowoofStore.Controllers
                 return View(shoppingCartItemList);
             }
 
-            return View("EmptyCart");
+            return View(ViewName.EmptyCart);
         }
     }
 }

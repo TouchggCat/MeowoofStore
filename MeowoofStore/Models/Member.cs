@@ -25,5 +25,9 @@ namespace MeowoofStore.Models
 
         public Role? Role { get; set; }
         public byte RoleId { get; set; }
+
+        public static readonly byte AdminRole = 1;
+
+        public static readonly byte CustomerRole = 2;
     }
 }
