@@ -15,5 +15,6 @@ namespace MeowoofStore.Data
 
         public DbSet<MeowoofStore.Models.Member>? Member { get; set; }
         public DbSet<MeowoofStore.Models.Role>? Role { get; set; }
+        public DbSet<MeowoofStore.Models.Order>? Order { get; set; }
     }
 }

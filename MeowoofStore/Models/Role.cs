@@ -3,6 +3,6 @@
     public class Role
     {
         public byte Id { get; set; }
-        public string? roleName { get; set; }
+        public string? RoleName { get; set; }
     }
 }

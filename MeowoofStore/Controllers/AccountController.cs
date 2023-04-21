@@ -36,8 +36,8 @@ namespace MeowoofStore.Controllers
 
             var identity = new ClaimsIdentity(new[]
     {
-            new Claim(ClaimTypes.Name, member.memberName),
-            new Claim(ClaimTypes.Email, member.email),
+            new Claim(ClaimTypes.Name, member.MemberName),
+            new Claim(ClaimTypes.Email, member.Email),
         }, CookieAuthenticationDefaults.AuthenticationScheme);
 
             var principal = new ClaimsPrincipal(identity);
@@ -60,7 +60,7 @@ namespace MeowoofStore.Controllers
                 return View(viewModel);
 
             var member = await _context.Member
-                .Where(n => n.email == viewModel.email &&n.password== viewModel.password)
+                .Where(n => n.Email == viewModel.Email &&n.Password== viewModel.Password)
                 .Include(n=>n.Role)
                 .SingleOrDefaultAsync();
 
@@ -69,16 +69,16 @@ namespace MeowoofStore.Controllers
 
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Email,member.email),
-                new Claim(ClaimTypes.Name,member.memberName),
-                new Claim(ClaimTypes.Role,member.Role.roleName) 
+                new Claim(ClaimTypes.Email,member.Email),
+                new Claim(ClaimTypes.Name,member.MemberName),
+                new Claim(ClaimTypes.Role,member.Role.RoleName) 
             };
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
 
             // 如果上一頁的 URL 是本網站的網址，則使用它作為返回的頁面
-            if (Url.IsLocalUrl(viewModel.returnUrl))
-                return Redirect(viewModel.returnUrl);
+            if (Url.IsLocalUrl(viewModel.ReturnUrl))
+                return Redirect(viewModel.ReturnUrl);
 
             // 如果上一頁的 URL 不是本網站的網址，則返回首頁
             return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);    

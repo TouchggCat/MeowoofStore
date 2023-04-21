@@ -9,13 +9,13 @@ namespace MeowoofStore.ViewModels
         [Required]
         [DisplayName("信箱帳號")]
         [EmailAddress(ErrorMessage = "請輸入正確的信箱格式")]
-        public string? email { get; set; }
+        public string? Email { get; set; }
 
         [StringLength(255)]
         [Required]
         [DisplayName("密碼")]
-        public string? password { get; set; }
+        public string? Password { get; set; }
 
-        public string? returnUrl { get; set; }
+        public string? ReturnUrl { get; set; }
     }
 }

@@ -46,14 +46,14 @@ namespace MeowoofStore.Controllers.Api
         }
 
         [HttpPost]
-        public ActionResult<Product> CreateProduct(ProductViewModel viewModel)
+        public async Task<ActionResult<Product>> CreateProduct(ProductViewModel viewModel)
         {
             if (!ModelState.IsValid)
                 return BadRequest();
 
             if (viewModel.Photo != null)
             {
-                _photoProcess.CreatePhoto<ProductViewModel>(viewModel, FolderPath._Images_ProductImages,
+               await _photoProcess.CreatePhoto<ProductViewModel>(viewModel, FolderPath._Images_ProductImages,
                 nameof(viewModel.Photo), nameof(viewModel.ImageString));
             }
             var product = _iMapper.Map<Product>(viewModel);

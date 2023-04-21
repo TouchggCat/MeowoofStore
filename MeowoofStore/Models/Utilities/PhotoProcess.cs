@@ -19,7 +19,7 @@ namespace MeowoofStore.Models.Utilities
             imageStringProperty.SetValue(modelObject,photoName);                                                   //viewModel.ImageString = photoName;
             using (var stream = new FileStream(_environment.WebRootPath + folderPath + photoName, FileMode.Create))
             {
-                await photo.CopyToAsync(stream);  //改為使用非同步
+                await photo.CopyToAsync(stream); 
             }
         }
 
@@ -30,8 +30,10 @@ namespace MeowoofStore.Models.Utilities
                 string filePath = Path.Combine(_environment.WebRootPath + folderPath, photoName);
                 if (File.Exists(filePath))
                 {
-
-                    File.Delete(filePath);
+                    await Task.Run(() =>
+                    {
+                        File.Delete(filePath);
+                    });
                 }
             }
             catch(IOException ex)
