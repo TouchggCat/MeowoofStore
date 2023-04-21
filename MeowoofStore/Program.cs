@@ -24,7 +24,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     .AddCookie(options =>
     {
         options.AccessDeniedPath = "/Account/AccessDeny";
-        options.LoginPath = "/Account/Login";
+        //options.LoginPath = "/Account/Login";
     });
 
 builder.Services.AddAutoMapper(typeof(Program));

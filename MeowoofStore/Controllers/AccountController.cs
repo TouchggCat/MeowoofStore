@@ -18,7 +18,7 @@ namespace MeowoofStore.Controllers
             _context=context;
         }
 
-        public async Task<IActionResult> Register()
+        public IActionResult Register()
         {
             return View();
         }
@@ -46,22 +46,23 @@ namespace MeowoofStore.Controllers
             return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);
         }
 
-        public IActionResult Login()
+        public IActionResult Login(string returnUrl)
         {
+            ViewBag.ReturnUrl = returnUrl; //   [Authorize]傳來的
             return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Login(LoginViewModel viewModel)
+        public async Task<IActionResult> Login(LoginViewModel viewModel)
         {
             if(!ModelState.IsValid)
                 return View(viewModel);
 
-            var member = _context.Member
+            var member = await _context.Member
                 .Where(n => n.email == viewModel.email &&n.password== viewModel.password)
                 .Include(n=>n.Role)
-                .SingleOrDefault();
+                .SingleOrDefaultAsync();
 
             if (member == null)
                 return NotFound();
@@ -73,14 +74,20 @@ namespace MeowoofStore.Controllers
                 new Claim(ClaimTypes.Role,member.Role.roleName) 
             };
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+
+            // 如果上一頁的 URL 是本網站的網址，則使用它作為返回的頁面
+            if (Url.IsLocalUrl(viewModel.returnUrl))
+                return Redirect(viewModel.returnUrl);
+
+            // 如果上一頁的 URL 不是本網站的網址，則返回首頁
             return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);    
         }
 
         public async Task<IActionResult> LogOut()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction(nameof(HomeController.Index), HomeController.ControllerName);
+            return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);
         }
 
         public IActionResult AccessDeny()

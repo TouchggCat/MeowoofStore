@@ -1,4 +1,4 @@
-﻿@model MeowoofStore.Models.Member
+﻿@model MeowoofStore.ViewModels.LoginViewModel
 
 @{
     ViewData["Title"] = "MeowWoof-登入";
@@ -12,6 +12,7 @@
     <div class="col-md-4">
         <form asp-action="Login">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" name="ReturnUrl" value="@ViewBag.ReturnUrl" />
             <div class="form-group">
                 <label asp-for="email" class="control-label"></label>
                 <input asp-for="email" class="form-control" autocomplete="current-username" />

@@ -15,5 +15,7 @@ namespace MeowoofStore.ViewModels
         [Required]
         [DisplayName("密碼")]
         public string? password { get; set; }
+
+        public string? returnUrl { get; set; }
     }
 }

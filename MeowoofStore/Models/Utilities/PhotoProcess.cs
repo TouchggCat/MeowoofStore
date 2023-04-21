@@ -10,7 +10,7 @@ namespace MeowoofStore.Models.Utilities
         {
             _environment = environment;
         }
-        public  void CreatePhoto<T>(object modelObject, string folderPath,string photoPropertyName,string imageStringPropertyName) where T: class
+        public async Task CreatePhoto<T>(object modelObject, string folderPath,string photoPropertyName,string imageStringPropertyName) where T: class
         {
             var photoProperty = modelObject.GetType().GetProperty(photoPropertyName);          //取 viewModel.Photo 屬性資訊
             var photo = (IFormFile)photoProperty.GetValue(modelObject);
@@ -19,16 +19,24 @@ namespace MeowoofStore.Models.Utilities
             imageStringProperty.SetValue(modelObject,photoName);                                                   //viewModel.ImageString = photoName;
             using (var stream = new FileStream(_environment.WebRootPath + folderPath + photoName, FileMode.Create))
             {
-                photo.CopyTo(stream);
+                await photo.CopyToAsync(stream);  //改為使用非同步
             }
         }
 
-        public  void DeletePhoto(string folderPath, string photoName)
+        public async Task DeletePhoto(string folderPath, string photoName)
         {
-            string filePath = Path.Combine(_environment.WebRootPath + folderPath, photoName);
-            if (System.IO.File.Exists(filePath))
+            try
             {
-                System.IO.File.Delete(filePath);
+                string filePath = Path.Combine(_environment.WebRootPath + folderPath, photoName);
+                if (File.Exists(filePath))
+                {
+
+                    File.Delete(filePath);
+                }
+            }
+            catch(IOException ex)
+            {
+                throw new IOException("文件被使用中，請稍後刪除。",ex);
             }
         }
 

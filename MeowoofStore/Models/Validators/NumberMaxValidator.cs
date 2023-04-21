@@ -15,7 +15,5 @@ namespace MeowoofStore.Models.Validators
 
             return new ValidationResult(ErrorMessage ?? "請小於10000");
         }
-
-
     }
 }

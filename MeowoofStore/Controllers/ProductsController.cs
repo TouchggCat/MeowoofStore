@@ -21,7 +21,7 @@ namespace MeowoofStore.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IMapper _lMapper;
-        private readonly PhotoProcess _photoProcess;          //需在Program.cs 註冊 PhotoProcess 服務
+        private readonly PhotoProcess _photoProcess;          //需在Program.cs 註冊 PhotoProcess 變成服務才能注入
 
         public ProductsController(ApplicationDbContext context,IMapper mapper, PhotoProcess photoProcess)
         {
@@ -31,7 +31,7 @@ namespace MeowoofStore.Controllers
         }
 
         // GET: Products
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
             return View();
         }
@@ -68,7 +68,7 @@ namespace MeowoofStore.Controllers
             
             if(viewModel.Photo!=null)
             {
-                _photoProcess.CreatePhoto<ProductViewModel>(viewModel, FolderPath._Images_ProductImages,
+                await _photoProcess.CreatePhoto<ProductViewModel>(viewModel, FolderPath._Images_ProductImages,
                 nameof(viewModel.Photo), nameof(viewModel.ImageString));
             }
 
@@ -111,10 +111,10 @@ namespace MeowoofStore.Controllers
                 return View(ViewName.NullView);
 
             if (viewModel.Photo != null&& viewModel.ImageString!=null)
-                _photoProcess.DeletePhoto(FolderPath._Images_ProductImages, viewModel.ImageString);
+                await _photoProcess.DeletePhoto(FolderPath._Images_ProductImages, viewModel.ImageString);
             if (viewModel.Photo != null)
             {
-                _photoProcess.CreatePhoto<ProductViewModel>(viewModel, FolderPath._Images_ProductImages, 
+                await _photoProcess.CreatePhoto<ProductViewModel>(viewModel, FolderPath._Images_ProductImages, 
                 nameof(viewModel.Photo), nameof(viewModel.ImageString));
             }
             var productMapper = _lMapper.Map(viewModel,product);
@@ -134,7 +134,7 @@ namespace MeowoofStore.Controllers
                 return View(ViewName.NullView);
 
             if(!String.IsNullOrEmpty(imageString))
-                _photoProcess.DeletePhoto(FolderPath._Images_ProductImages, imageString);
+                await _photoProcess.DeletePhoto(FolderPath._Images_ProductImages, imageString);
 
             _context.Product.Remove(product);
             await _context.SaveChangesAsync();

@@ -6,6 +6,7 @@ using MeowoofStore.Models.Utilities;
 using MeowoofStore.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace MeowoofStore.Controllers.Api
 {
@@ -23,9 +24,9 @@ namespace MeowoofStore.Controllers.Api
             _photoProcess = photoProcess;
         }
         [HttpGet]
-        public ActionResult<IEnumerable<Product>> GetProducts()
+        public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
         {
-            var products = _context.Product;
+            var products = await _context.Product.ToListAsync();
 
             if (products == null)
                 return NotFound();
@@ -64,14 +65,14 @@ namespace MeowoofStore.Controllers.Api
         }
 
         [HttpDelete("{id}")]
-        public ActionResult DeleteProductsById(int id ,string imageString)
+        public  async Task<ActionResult> DeleteProductsById(int id ,string imageString)
         {
             var products = _context.Product.SingleOrDefault(m => m.Id == id);
 
             if (products == null)
                 return NotFound();
             if (!String.IsNullOrEmpty(imageString))
-                _photoProcess.DeletePhoto(FolderPath._Images_ProductImages, imageString);
+               await  _photoProcess.DeletePhoto(FolderPath._Images_ProductImages, imageString);
             _context.Product.Remove(products);
             _context.SaveChanges();
             return NoContent();

@@ -2,6 +2,7 @@
 using MeowoofStore.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace MeowoofStore.Controllers.Api
 {
@@ -16,9 +17,9 @@ namespace MeowoofStore.Controllers.Api
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<Product>> GetShoppingList()
+        public async Task<ActionResult<IEnumerable<Product>>> GetShoppingList()
         {
-            var products = _context.Product;
+            var products = await _context.Product.ToListAsync();
 
             if (products == null)
                 return NotFound("No product !");
