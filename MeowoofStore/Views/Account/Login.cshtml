@@ -15,12 +15,12 @@
             <input type="hidden" name="ReturnUrl" value="@ViewBag.ReturnUrl" />
             <div class="form-group">
                 <label asp-for="Email" class="control-label"></label>
-                <input asp-for="Email" class="form-control" autocomplete="current-username" />
+                <input asp-for="Email" class="form-control js-email" autocomplete="current-username" />
                 <span asp-validation-for="Email" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="Password" class="control-label"></label>
-                <input asp-for="Password" class="form-control" autocomplete="current-password" type="password" />
+                <input asp-for="Password" class="form-control js-password" autocomplete="current-password" type="password" />
                 <span asp-validation-for="Password" class="text-danger"></span>
             </div>
             <br />
@@ -28,6 +28,8 @@
             <div class="form-group">
                 @Html.AntiForgeryToken()
                 <input type="submit" value="登入" class="btn btn-primary" />
+                <button type="button" class="btn btn-success js-adminDemo">Admin</button>
+                <button type="button" class="btn btn-secondary js-customerDemo">Customer</button>
             </div>
         </form>
     </div>
@@ -36,4 +38,14 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(".js-adminDemo").on("click",function(){
+            $(".js-email").val("admin@admin.com");
+            $(".js-password").val("admin");
+        });
+        $(".js-customerDemo").on("click", function () {
+            $(".js-email").val("customer@customer.com");
+            $(".js-password").val("customer");
+        });
+    </script>
 }
