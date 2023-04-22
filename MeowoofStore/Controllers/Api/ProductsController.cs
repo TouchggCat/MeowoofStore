@@ -4,12 +4,15 @@ using MeowoofStore.Models;
 using MeowoofStore.Models.StringKeys;
 using MeowoofStore.Models.Utilities;
 using MeowoofStore.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace MeowoofStore.Controllers.Api
 {
+    [Authorize(Roles = "Administrator")]
     [Microsoft.AspNetCore.Mvc.Route("api/[controller]")]
     [ApiController]
     public class ProductsController : ControllerBase

@@ -86,5 +86,17 @@ namespace MeowoofStore.Controllers
 
             return View(ViewName.EmptyCart);
         }
+
+        public IActionResult OrderList(int Id)
+        {
+            if (HttpContext.Session.Keys.Contains(ShoppingCartSessionKey.ShoppingCartListKey))
+            {
+                string? jsonString = HttpContext.Session.GetString(ShoppingCartSessionKey.ShoppingCartListKey);
+                List<ShoppingCartItem>? shoppingCartItemList = JsonSerializer.Deserialize<List<ShoppingCartItem>>(jsonString);
+                return View(shoppingCartItemList);
+            }
+
+            return View(ViewName.EmptyCart);
+        }
     }
 }
