@@ -1,5 +1,4 @@
 ﻿using MeowoofStore.Data;
-using MeowoofStore.Models;
 using MeowoofStore.Models.StringKeys;
 using MeowoofStore.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +12,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Policy;
+using System.Security.Claims;
+using MeowoofStore.Models;
 
 namespace MeowoofStore.Controllers
 {
@@ -57,19 +59,19 @@ namespace MeowoofStore.Controllers
                 return View(ViewName.NullView);
 
             string? jsonString = "";
-            List<ShoppingCartItem>? shoppingCartItemList = null;
+            List<ShoppingCartViewModel>? shoppingCartItemList = null;
             if (!HttpContext.Session.Keys.Contains(ShoppingCartSessionKey.ShoppingCartListKey))
-                shoppingCartItemList = new List<ShoppingCartItem>();
+                shoppingCartItemList = new List<ShoppingCartViewModel>();
             else
             {
                 jsonString = HttpContext.Session.GetString(ShoppingCartSessionKey.ShoppingCartListKey);
-                shoppingCartItemList = JsonSerializer.Deserialize<List<ShoppingCartItem>>(jsonString);
+                shoppingCartItemList = JsonSerializer.Deserialize<List<ShoppingCartViewModel>>(jsonString);
             }
 
-            var shoppingCartItem=_lMapper.Map<ShoppingCartItem>(viewModel);
-            shoppingCartItem.Product=product;
+            var shoppingCartViewModel=_lMapper.Map<ShoppingCartViewModel>(viewModel);
+            shoppingCartViewModel.Product=product;
 
-            shoppingCartItemList.Add(shoppingCartItem);
+            shoppingCartItemList.Add(shoppingCartViewModel);
             jsonString = JsonSerializer.Serialize(shoppingCartItemList);
             HttpContext.Session.SetString(ShoppingCartSessionKey.ShoppingCartListKey, jsonString);
             return RedirectToAction(nameof(List));
@@ -80,22 +82,47 @@ namespace MeowoofStore.Controllers
             if (HttpContext.Session.Keys.Contains(ShoppingCartSessionKey.ShoppingCartListKey))
             {
                 string? jsonString = HttpContext.Session.GetString(ShoppingCartSessionKey.ShoppingCartListKey);
-                List<ShoppingCartItem>? shoppingCartItemList = JsonSerializer.Deserialize<List<ShoppingCartItem>>(jsonString);
+                List<ShoppingCartViewModel>? shoppingCartItemList = JsonSerializer.Deserialize<List<ShoppingCartViewModel>>(jsonString);
                 return View(shoppingCartItemList);
             }
 
             return View(ViewName.EmptyCart);
         }
 
-        public IActionResult OrderList(int Id)
+        [HttpPost]
+        public IActionResult CartView(string receiverName, string address, string email, List<ShoppingCartViewModel> shoppingCartViewModels)
         {
-            if (HttpContext.Session.Keys.Contains(ShoppingCartSessionKey.ShoppingCartListKey))
-            {
-                string? jsonString = HttpContext.Session.GetString(ShoppingCartSessionKey.ShoppingCartListKey);
-                List<ShoppingCartItem>? shoppingCartItemList = JsonSerializer.Deserialize<List<ShoppingCartItem>>(jsonString);
-                return View(shoppingCartItemList);
-            }
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+            var member = _context.Member.Where(n=>n.Email == userEmail).SingleOrDefault();
+            Guid OrderNumberGuid = Guid.NewGuid();
 
+             var order = new Order()
+            {
+                Address = address,
+                Email = email,
+                MemberId = member.Id,
+                OrderDate = DateTime.Now,
+                ReceiverName = receiverName,
+                OrderNumber = OrderNumberGuid
+            };
+            _context.Order.Add(order);
+
+            OrderDetail? orderDetail = null;
+
+            foreach (var  item in shoppingCartViewModels)
+            {
+                orderDetail = new OrderDetail()
+                {
+                    ProductId= item.Id,
+                    OrderNumber=OrderNumberGuid,
+                    Price = item.Price,
+                    Quantity = item.Quantity,
+                    TotalPrice = item.TotalPrice,
+                    IsShopping=false,
+                };
+                _context.OrderDetail.Add(orderDetail);
+            }
+            _context.SaveChanges();
             return View(ViewName.EmptyCart);
         }
     }

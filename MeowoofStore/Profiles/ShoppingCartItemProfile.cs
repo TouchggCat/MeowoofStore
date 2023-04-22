@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using MeowoofStore.Models;
 using MeowoofStore.ViewModels;
 
 namespace MeowoofStore.Profiles
@@ -8,9 +7,8 @@ namespace MeowoofStore.Profiles
     {
         public ShoppingCartItemProfile()
         {
-            CreateMap<ShoppingCartItem, AddToCartViewModel>();
-            CreateMap<AddToCartViewModel, ShoppingCartItem>()
-                .ForMember(a => a.Id, b => b.MapFrom(c => c.id));
+            CreateMap<ShoppingCartViewModel, AddToCartViewModel>();
+            CreateMap<AddToCartViewModel, ShoppingCartViewModel>();
         }
     }
 }

@@ -11,10 +11,10 @@ namespace MeowoofStore.Data
         {
         }
         public DbSet<MeowoofStore.Models.Product>? Product { get; set; }
-        public DbSet<MeowoofStore.Models.ShoppingCartItem>? ShoppingCartItem { get; set; }
 
         public DbSet<MeowoofStore.Models.Member>? Member { get; set; }
         public DbSet<MeowoofStore.Models.Role>? Role { get; set; }
         public DbSet<MeowoofStore.Models.Order>? Order { get; set; }
+        public DbSet<MeowoofStore.Models.OrderDetail>? OrderDetail { get; set; }
     }
 }

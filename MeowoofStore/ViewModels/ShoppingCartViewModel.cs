@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using MeowoofStore.Models;
 
-namespace MeowoofStore.Models
+namespace MeowoofStore.ViewModels
 {
-    public class ShoppingCartItem
+    public class ShoppingCartViewModel
     {
         public int Id { get; set; }
+
         [DisplayName("數量")]
         public int Quantity { get; set; }
 
@@ -16,8 +18,7 @@ namespace MeowoofStore.Models
         public int Price { get; set; }
 
         [DisplayName("小計")]
-        public int TotalPrice => this.Quantity * this.Price;
-        public int ProductId { get; set; }
+        public int TotalPrice => Quantity * Price;
         public Product? Product { get; set; }
     }
 }

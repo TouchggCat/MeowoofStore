@@ -11,15 +11,20 @@ namespace MeowoofStore.Models
         [DisplayName("訂單編號")]
         public Guid OrderNumber { get; set; }
 
+        [DisplayName("數量")]
+        public int Quantity { get; set; }
+
+
+        [DisplayName("價格")]
+        public int Price { get; set; }
+
         [DisplayName("總計")]
         public int TotalPrice { get; set; }
 
+        [DisplayName("已寄送")]
         public bool IsShopping { get; set; } 
 
-        public int MemberId { get; set; }
-
         public int ProductId { get; set; }
-        public Member? Member { get; set; }
         public Product? Product { get; set; }
     }
 }

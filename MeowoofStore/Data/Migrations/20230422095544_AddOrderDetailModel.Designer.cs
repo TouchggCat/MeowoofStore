@@ -4,6 +4,7 @@ using MeowoofStore.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MeowoofStore.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230422095544_AddOrderDetailModel")]
+    partial class AddOrderDetailModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -108,6 +111,9 @@ namespace MeowoofStore.Data.Migrations
                     b.Property<bool>("IsShopping")
                         .HasColumnType("bit");
 
+                    b.Property<int>("MemberId")
+                        .HasColumnType("int");
+
                     b.Property<Guid>("OrderNumber")
                         .HasMaxLength(255)
                         .HasColumnType("uniqueidentifier");
@@ -125,6 +131,8 @@ namespace MeowoofStore.Data.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("MemberId");
 
                     b.HasIndex("ProductId");
 
@@ -401,11 +409,19 @@ namespace MeowoofStore.Data.Migrations
 
             modelBuilder.Entity("MeowoofStore.Models.OrderDetail", b =>
                 {
+                    b.HasOne("MeowoofStore.Models.Member", "Member")
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("MeowoofStore.Models.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Member");
 
                     b.Navigation("Product");
                 });
