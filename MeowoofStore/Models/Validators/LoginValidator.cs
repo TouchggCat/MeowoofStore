@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MeowoofStore.Models.Validators
 {
-    public class ValidateCredentials : ValidationAttribute
+    public class LoginValidator : ValidationAttribute
     {
 
         protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
