@@ -10,7 +10,7 @@ namespace MeowoofStore.Models.Utilities
         {
             _environment = environment;
         }
-        public async Task CreatePhoto<T>(object modelObject, string folderPath,string photoPropertyName,string imageStringPropertyName) where T: class
+        public async Task CreatePhoto<T>(T modelObject, string folderPath,string photoPropertyName,string imageStringPropertyName) where T: class
         {
             var photoProperty = modelObject.GetType().GetProperty(photoPropertyName);          //取 viewModel.Photo 屬性資訊
             var photo = (IFormFile)photoProperty.GetValue(modelObject);

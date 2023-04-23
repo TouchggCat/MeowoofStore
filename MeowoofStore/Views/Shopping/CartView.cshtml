@@ -31,7 +31,6 @@
     <tbody>
  @for (int i = 0; i < Model.Count; i++){
             showItemCount++;
-          @*      <input type="hidden" name="ShoppingCartViewModels[@i].Id " value="@Model[i].Id" />*@
                 <tr>
                     <td>
                         <input readonly="readonly" name="ShoppingCartViewModels[@i].Id" value="@Model[i].Id" style="border:none;" />

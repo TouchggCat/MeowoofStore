@@ -21,9 +21,6 @@ namespace MeowoofStore.Models
         [DisplayName("總計")]
         public int TotalPrice { get; set; }
 
-        [DisplayName("已寄送")]
-        public bool IsShopping { get; set; } 
-
         public int ProductId { get; set; }
         public Product? Product { get; set; }
     }

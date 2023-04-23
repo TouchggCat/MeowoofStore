@@ -10,7 +10,7 @@ namespace MeowoofStore.Models.Validators
             var _context = validationContext.GetService(typeof(ApplicationDbContext)) as ApplicationDbContext;
 
             var member = validationContext.ObjectInstance as Member;
-            var memberEmail = _context.Member.Where(n => n.Email == member.Email);
+            var memberEmail = _context.Member.Where(n => n.Email == member.Email).SingleOrDefault();
             if (memberEmail != null )
                 return new ValidationResult("帳號已被使用");
 

@@ -15,6 +15,8 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Policy;
 using System.Security.Claims;
 using MeowoofStore.Models;
+using Microsoft.EntityFrameworkCore;
+using AutoMapper.Execution;
 
 namespace MeowoofStore.Controllers
 {
@@ -86,7 +88,7 @@ namespace MeowoofStore.Controllers
                 return View(shoppingCartItemList);
             }
 
-            return View(ViewName.EmptyCart);
+            return View(ViewName.EmptyCart,StringModel.ShoppingCartIsEmpty);
         }
 
         [HttpPost]
@@ -103,8 +105,9 @@ namespace MeowoofStore.Controllers
                 MemberId = member.Id,
                 OrderDate = DateTime.Now,
                 ReceiverName = receiverName,
-                OrderNumber = OrderNumberGuid
-            };
+                OrderNumber = OrderNumberGuid,
+                IsShopping = false,
+             };
             _context.Order.Add(order);
 
             OrderDetail? orderDetail = null;
@@ -117,13 +120,21 @@ namespace MeowoofStore.Controllers
                     OrderNumber=OrderNumberGuid,
                     Price = item.Price,
                     Quantity = item.Quantity,
-                    TotalPrice = item.TotalPrice,
-                    IsShopping=false,
+                    TotalPrice = item.TotalPrice
                 };
                 _context.OrderDetail.Add(orderDetail);
             }
             _context.SaveChanges();
-            return View(ViewName.EmptyCart);
+            RemoveSession(ShoppingCartSessionKey.ShoppingCartListKey);
+
+            return RedirectToAction(nameof(OrderController.MemberOrder),ControllerName.Order);
         }
+
+        private void RemoveSession(string SessionKey)
+        {
+            if (HttpContext.Session.Keys.Contains(SessionKey))
+                HttpContext.Session.Remove(SessionKey);
+        }
+
     }
 }
