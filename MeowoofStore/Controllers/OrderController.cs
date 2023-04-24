@@ -23,6 +23,16 @@ namespace MeowoofStore.Controllers
             return View(order);
         }
 
+        [Authorize(Roles = "Administrator")]
+        public IActionResult AdminOrderDetail(Guid OrderNumber)
+        {
+            var orderDetail = _context.OrderDetail
+                                             .Where(n => n.OrderNumber == OrderNumber)
+                                             .Include(n => n.Product).ToList();
+
+            return View(orderDetail);
+        }
+
         public IActionResult MemberOrder()
         {
             var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
@@ -50,5 +60,7 @@ namespace MeowoofStore.Controllers
 
             return View(orderDetail);
         }
+
+
     }
 }

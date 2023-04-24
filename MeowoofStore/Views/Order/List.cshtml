@@ -59,8 +59,7 @@
                     @Html.DisplayFor(modelItem => item.IsShopping)
                 </td>
             <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+                    <a asp-action="AdminOrderDetail" asp-route-OrderNumber="@item.OrderNumber">訂單明細</a> |
                 <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
             </td>
         </tr>
