@@ -90,6 +90,7 @@ namespace MeowoofStore.Controllers
                 return View(ViewName.NullView);
 
             var viewModel = _lMapper.Map<ProductViewModel>(product);
+
             return View(viewModel);
         }
 
@@ -112,6 +113,7 @@ namespace MeowoofStore.Controllers
 
             if (viewModel.Photo != null&& viewModel.ImageString!=null)
                 await _photoProcess.DeletePhoto(FolderPath._Images_ProductImages, viewModel.ImageString);
+
             if (viewModel.Photo != null)
             {
                 await _photoProcess.CreatePhoto<ProductViewModel>(viewModel, FolderPath._Images_ProductImages, 
@@ -121,6 +123,7 @@ namespace MeowoofStore.Controllers
 
             _context.Update(productMapper);
             await _context.SaveChangesAsync();
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -138,9 +141,8 @@ namespace MeowoofStore.Controllers
 
             _context.Product.Remove(product);
             await _context.SaveChangesAsync();
+
             return RedirectToAction(nameof(Index));
         }
-
-
     }
 }

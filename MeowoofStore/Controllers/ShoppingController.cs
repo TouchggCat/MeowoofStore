@@ -32,7 +32,7 @@ namespace MeowoofStore.Controllers
         }
         public IActionResult List()
         {
-            var products = _context.Product.Select(n => n);
+            var products = _context.Product?.Select(n => n);
             if(products != null )
                return View(products);
 
@@ -41,12 +41,12 @@ namespace MeowoofStore.Controllers
         public IActionResult AddToCart(int id) 
         {
             int defaultQuantity = 1;
-            //AddToCartViewModel viewModel=new AddToCartViewModel();
-            var product = _context.Product.SingleOrDefault(n => n.Id == id);
+            var product = _context.Product?.SingleOrDefault(n => n.Id == id);
             if(product != null)
             {
                 var viewModel = _lMapper.Map<AddToCartViewModel>(product);
                 viewModel.Quantity = defaultQuantity;
+
                 return View(viewModel);
             }
 
@@ -56,26 +56,19 @@ namespace MeowoofStore.Controllers
         [HttpPost]
         public IActionResult AddToCart(AddToCartViewModel viewModel)
         {
-            var product = _context.Product.SingleOrDefault(n => n.Id == viewModel.id);
+            var product = _context.Product?.SingleOrDefault(n => n.Id == viewModel.id);
             if (product == null)
                 return View(ViewName.NullView);
 
-            string? jsonString = "";
-            List<ShoppingCartViewModel>? shoppingCartItemList = null;
-            if (!HttpContext.Session.Keys.Contains(ShoppingCartSessionKey.ShoppingCartListKey))
-                shoppingCartItemList = new List<ShoppingCartViewModel>();
-            else
-            {
-                jsonString = HttpContext.Session.GetString(ShoppingCartSessionKey.ShoppingCartListKey);
-                shoppingCartItemList = JsonSerializer.Deserialize<List<ShoppingCartViewModel>>(jsonString);
-            }
+            List<ShoppingCartViewModel>? shoppingCartViewModelList = GetShoppingCartListFromSession();
+            // 檢查是否已經包含相同的商品，如果是，增加數量並退出方法
+            if (IsItemAlreadyExistInCart(shoppingCartViewModelList, viewModel.id, viewModel.Quantity))
+                return RedirectToAction(nameof(List));
 
-            var shoppingCartViewModel=_lMapper.Map<ShoppingCartViewModel>(viewModel);
-            shoppingCartViewModel.Product=product;
+            var shoppingCartViewModel = MappingToShoppingCartViewModel(product, viewModel);
+            shoppingCartViewModelList.Add(shoppingCartViewModel);
+            SaveShoppingCartListToSession(shoppingCartViewModelList);
 
-            shoppingCartItemList.Add(shoppingCartViewModel);
-            jsonString = JsonSerializer.Serialize(shoppingCartItemList);
-            HttpContext.Session.SetString(ShoppingCartSessionKey.ShoppingCartListKey, jsonString);
             return RedirectToAction(nameof(List));
         }
 
@@ -83,8 +76,7 @@ namespace MeowoofStore.Controllers
         {
             if (HttpContext.Session.Keys.Contains(ShoppingCartSessionKey.ShoppingCartListKey))
             {
-                string? jsonString = HttpContext.Session.GetString(ShoppingCartSessionKey.ShoppingCartListKey);
-                List<ShoppingCartViewModel>? shoppingCartItemList = JsonSerializer.Deserialize<List<ShoppingCartViewModel>>(jsonString);
+                List<ShoppingCartViewModel>? shoppingCartItemList = GetShoppingCartItemsFromSession();
                 return View(shoppingCartItemList);
             }
 
@@ -95,39 +87,56 @@ namespace MeowoofStore.Controllers
         public IActionResult CartView(string receiverName, string address, string email, List<ShoppingCartViewModel> shoppingCartViewModels)
         {
             var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
-            var member = _context.Member.Where(n=>n.Email == userEmail).SingleOrDefault();
-            Guid OrderNumberGuid = Guid.NewGuid();
+            var member = _context.Member?.Where(n=>n.Email == userEmail).SingleOrDefault();
+            Guid orderNumberGuid = Guid.NewGuid();
 
-             var order = new Order()
-            {
-                Address = address,
-                Email = email,
-                MemberId = member.Id,
-                OrderDate = DateTime.Now,
-                ReceiverName = receiverName,
-                OrderNumber = OrderNumberGuid,
-                IsShopping = false,
-             };
+            var order = MappingOrder(address, email, member.Id, receiverName, orderNumberGuid);
             _context.Order.Add(order);
 
-            OrderDetail? orderDetail = null;
-
-            foreach (var  item in shoppingCartViewModels)
+            foreach (var item in shoppingCartViewModels)
             {
-                orderDetail = new OrderDetail()
-                {
-                    ProductId= item.Id,
-                    OrderNumber=OrderNumberGuid,
-                    Price = item.Price,
-                    Quantity = item.Quantity,
-                    TotalPrice = item.TotalPrice
-                };
+                var orderDetail = MappingOrderDetail(item.Id, orderNumberGuid, item.Price, item.Quantity, item.TotalPrice);
                 _context.OrderDetail.Add(orderDetail);
             }
+
             _context.SaveChanges();
             RemoveSession(ShoppingCartSessionKey.ShoppingCartListKey);
 
             return RedirectToAction(nameof(OrderController.MemberOrder),ControllerName.Order);
+        }
+
+
+        private Order MappingOrder(string address, string email, int memberId, string receiverName, Guid orderNumberGuid)
+        {
+            return new Order()
+            {
+                Address = address,
+                Email = email,
+                MemberId = memberId,
+                OrderDate = DateTime.Now,
+                ReceiverName = receiverName,
+                OrderNumber = orderNumberGuid,
+                IsShopping = false,
+            };
+        }
+
+        private OrderDetail MappingOrderDetail(int productId, Guid orderNumber, int price, int quantity, int totalPrice)
+        {
+            return new OrderDetail()
+            {
+                ProductId = productId,
+                OrderNumber = orderNumber,
+                Price = price,
+                Quantity = quantity,
+                TotalPrice = totalPrice
+            };
+        }
+
+        private List<ShoppingCartViewModel>? GetShoppingCartItemsFromSession()
+        {
+            string? jsonString = HttpContext.Session.GetString(ShoppingCartSessionKey.ShoppingCartListKey);
+            List<ShoppingCartViewModel>? shoppingCartItemList = JsonSerializer.Deserialize<List<ShoppingCartViewModel>>(jsonString);
+            return shoppingCartItemList;
         }
 
         private void RemoveSession(string SessionKey)
@@ -136,5 +145,38 @@ namespace MeowoofStore.Controllers
                 HttpContext.Session.Remove(SessionKey);
         }
 
+        private List<ShoppingCartViewModel> GetShoppingCartListFromSession()
+        {
+            if (!HttpContext.Session.Keys.Contains(ShoppingCartSessionKey.ShoppingCartListKey))
+                return new List<ShoppingCartViewModel>();
+
+            var jsonString = HttpContext.Session.GetString(ShoppingCartSessionKey.ShoppingCartListKey);
+            return JsonSerializer.Deserialize<List<ShoppingCartViewModel>>(jsonString);
+        }
+
+        private bool IsItemAlreadyExistInCart(List<ShoppingCartViewModel> shoppingCartViewModelList, int productId, int quantity)
+        {
+            var existingItem = shoppingCartViewModelList.SingleOrDefault(x => x.Product.Id == productId);
+            if (existingItem != null)
+            {
+                existingItem.Quantity += quantity;
+                SaveShoppingCartListToSession(shoppingCartViewModelList);
+                return true;
+            }
+            return false;
+        }
+
+        private ShoppingCartViewModel MappingToShoppingCartViewModel(Product product, AddToCartViewModel viewModel)
+        {
+            var shoppingCartViewModel = _lMapper.Map<ShoppingCartViewModel>(viewModel);
+            shoppingCartViewModel.Product = product;
+            return shoppingCartViewModel;
+        }
+
+        private void SaveShoppingCartListToSession(List<ShoppingCartViewModel> shoppingCartViewModelList)
+        {
+            var serializedJsonString = JsonSerializer.Serialize(shoppingCartViewModelList);
+            HttpContext.Session.SetString(ShoppingCartSessionKey.ShoppingCartListKey, serializedJsonString);
+        }
     }
 }
