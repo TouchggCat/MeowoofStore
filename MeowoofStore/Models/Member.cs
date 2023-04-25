@@ -30,6 +30,9 @@ namespace MeowoofStore.Models
         [DisplayName("住址")]
         public string? Address { get; set; }
 
+        [MaxLength(16)]
+        public byte[]? Salt { get; set; }
+
         public Role? Role { get; set; }
         public byte RoleId { get; set; }
 

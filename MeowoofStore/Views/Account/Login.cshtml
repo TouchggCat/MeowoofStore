@@ -1,5 +1,6 @@
 ﻿@model MeowoofStore.ViewModels.LoginViewModel
 
+
 @{
     ViewData["Title"] = "MeowWoof-登入";
 }
@@ -16,12 +17,20 @@
             <div class="form-group">
                 <label asp-for="Email" class="control-label"></label>
                 <input asp-for="Email" class="form-control js-email" autocomplete="current-username" />
-                <span asp-validation-for="Email" class="text-danger"></span>
+       
             </div>
             <div class="form-group">
                 <label asp-for="Password" class="control-label"></label>
                 <input asp-for="Password" class="form-control js-password" autocomplete="current-password" type="password" />
+                @if (ViewData.ModelState.ErrorCount > 1)
+                {
                 <span asp-validation-for="Password" class="text-danger"></span>
+                }
+                else
+                {
+                  <span asp-validation-for="Email" class="text-danger"></span>
+                  <span asp-validation-for="Password" class="text-danger"></span>
+                }
             </div>
             <br />
 

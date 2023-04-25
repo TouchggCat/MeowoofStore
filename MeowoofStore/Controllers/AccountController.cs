@@ -7,6 +7,9 @@ using System.Security.Claims;
 using MeowoofStore.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using MeowoofStore.Models.StringKeys;
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using MeowoofStore.Models.Utilities;
 
 namespace MeowoofStore.Controllers
 {
@@ -23,28 +26,39 @@ namespace MeowoofStore.Controllers
             return View();
         }
 
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(Member member)
+        public async Task<IActionResult> Register(Member? member)
         {
             if (!ModelState.IsValid)
                 return View(member);
 
-            member.RoleId = Member.CustomerRole;
-            _context.Member.Add(member);
-            await _context.SaveChangesAsync();
+            try
+            {
+                // Generate a random salt value
+                byte[] salt = PasswordAndSaltProcess.SaltGenerator();
 
-            var identity = new ClaimsIdentity(new[]
-    {
-            new Claim(ClaimTypes.Name, member.MemberName),
-            new Claim(ClaimTypes.Email, member.Email),
-        }, CookieAuthenticationDefaults.AuthenticationScheme);
+                // Hash the user's password
+                //string hashPassword = HashUserPassword(member, salt);
+                string hashPassword = PasswordAndSaltProcess.HashEnteredPassword(member, salt,nameof(member.Password));
 
-            var principal = new ClaimsPrincipal(identity);
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+                // Save the salt and hashed password to your database
+                await SaveSaltAndPasswordToDB(member, salt, hashPassword);
+
+                await SignInByClaimIdentity(member);
+
+                return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "An error occurred while registering. Please try again later.");
+            }
 
             return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);
         }
+
 
         public IActionResult Login(string returnUrl)
         {
@@ -52,37 +66,32 @@ namespace MeowoofStore.Controllers
             return View();
         }
 
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel viewModel)
         {
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
                 return View(viewModel);
 
             var member = await _context.Member
-                .Where(n => n.Email == viewModel.Email &&n.Password== viewModel.Password)
-                .Include(n=>n.Role)
-                .SingleOrDefaultAsync();
+                                       .Where(m => m.Email == viewModel.Email)
+                                       .Include(n => n.Role)
+                                       .SingleOrDefaultAsync();
 
-            if (member == null)
+            if (!IsValidLogin(viewModel, _context))
                 return NotFound();
 
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Email,member.Email),
-                new Claim(ClaimTypes.Name,member.MemberName),
-                new Claim(ClaimTypes.Role,member.Role.RoleName) 
-            };
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+            await SignInByClaimIdentity(member);
 
             // 如果上一頁的 URL 是本網站的網址，則使用它作為返回的頁面
             if (Url.IsLocalUrl(viewModel.ReturnUrl))
                 return Redirect(viewModel.ReturnUrl);
 
             // 如果上一頁的 URL 不是本網站的網址，則返回首頁
-            return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);    
+            return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);
         }
+
 
         public async Task<IActionResult> LogOut()
         {
@@ -93,6 +102,55 @@ namespace MeowoofStore.Controllers
         public IActionResult AccessDeny()
         {
             return View();
+        }
+
+
+
+        private async Task SaveSaltAndPasswordToDB(Member? member, byte[] salt, string hashPassword)
+        {
+            member.RoleId = Member.CustomerRole;
+            member.Password = hashPassword;
+            member.Salt = salt;
+            _context.Member.Add(member);
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task SignInByClaimIdentity(Member? member)
+        {
+                member = await _context.Member
+                                       .Where(m => m.Email == member.Email)
+                                       .Include(n => n.Role)
+                                       .SingleOrDefaultAsync();  //TODO 想辦法在其他地方載入?
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Email,member.Email),
+                new Claim(ClaimTypes.Name,member.MemberName),
+                new Claim(ClaimTypes.Role,member.Role.RoleName)
+            };
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+        }
+
+
+        private bool IsValidLogin(LoginViewModel loginViewModel, ApplicationDbContext _context)
+        {
+            var member = _context.Member.SingleOrDefault(m => m.Email == loginViewModel.Email);
+
+            if (member == null)
+                return false;
+
+            var hashedPasswordFromDb = member.Password;
+
+            // Compute the hash of the user-provided password using the retrieved salt
+            var hashPassword = PasswordAndSaltProcess
+                                    .HashEnteredPassword(loginViewModel, member.Salt, nameof(loginViewModel.Password));
+
+            // Compare the computed hash with the stored hash
+            if (hashPassword != hashedPasswordFromDb)
+                return false;
+
+            return true;
         }
     }
 }
