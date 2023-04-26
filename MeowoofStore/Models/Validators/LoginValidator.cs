@@ -12,7 +12,7 @@ namespace MeowoofStore.Models.Validators
             ApplicationDbContext? _context =validationContext.GetService(typeof(ApplicationDbContext)) as ApplicationDbContext;
 
             var member = (LoginViewModel)validationContext.ObjectInstance;
-            var password = _context.Member.Where(n => n.Password == member.Password).SingleOrDefault();
+            var password = _context.Member.FirstOrDefault(n => n.Password.Equals(member.Password));
             var email = _context.Member.Where(n => n.Email == member.Email).SingleOrDefault();
             if(password == null || email == null)
                 return new ValidationResult("帳號或密碼錯誤");
