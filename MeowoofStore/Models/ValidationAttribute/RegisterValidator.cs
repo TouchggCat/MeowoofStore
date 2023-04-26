@@ -1,4 +1,5 @@
 ﻿using MeowoofStore.Data;
+using MeowoofStore.ViewModels;
 using System.ComponentModel.DataAnnotations;
 
 namespace MeowoofStore.Models.Validators
@@ -9,8 +10,8 @@ namespace MeowoofStore.Models.Validators
         {
             var _context = validationContext.GetService(typeof(ApplicationDbContext)) as ApplicationDbContext;
 
-            var member = validationContext.ObjectInstance as Member;
-            var memberEmail = _context.Member.Where(n => n.Email == member.Email).SingleOrDefault();
+            var viewModel = validationContext.ObjectInstance as RegisterViewModel;
+            var memberEmail = _context.Member.Where(n => n.Email == viewModel.Email).SingleOrDefault();
             if (memberEmail != null )
                 return new ValidationResult("帳號已被使用");
 

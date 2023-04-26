@@ -16,14 +16,14 @@ namespace MeowoofStore.Controllers
             _context = context;
         }
 
-        [Authorize(Roles = "Administrator")]
+        [Authorize(Roles =nameof(RoleName.Administrator))]
         public IActionResult List()
         {
             var order = _context.Order.ToList();
             return View(order);
         }
 
-        [Authorize(Roles = "Administrator")]
+        [Authorize(Roles = nameof(RoleName.Administrator))]
         public IActionResult AdminOrderDetail(Guid OrderNumber)
         {
             var orderDetail = _context.OrderDetail

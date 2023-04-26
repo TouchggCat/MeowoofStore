@@ -10,15 +10,19 @@ using MeowoofStore.Models.StringKeys;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using MeowoofStore.Models.Utilities;
+using AutoMapper;
 
 namespace MeowoofStore.Controllers
 {
     public class AccountController : Controller
     {
         private readonly ApplicationDbContext _context;
-        public AccountController(ApplicationDbContext context)
+        private readonly IMapper _IMapper;
+
+        public AccountController(ApplicationDbContext context,IMapper mapper)
         {
             _context=context;
+            _IMapper=mapper;
         }
 
         public IActionResult Register()
@@ -29,10 +33,12 @@ namespace MeowoofStore.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(Member? member)
+        public async Task<IActionResult> Register(RegisterViewModel? viewModel)
         {
             if (!ModelState.IsValid)
-                return View(member);
+                return View(viewModel);
+
+            var member = _IMapper.Map<Member>(viewModel);
 
             try
             {
@@ -53,7 +59,7 @@ namespace MeowoofStore.Controllers
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("", "An error occurred while registering. Please try again later.");
+                ModelState.AddModelError("", "註冊時發生錯誤，請稍後再試。");
             }
 
             return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);
@@ -108,7 +114,8 @@ namespace MeowoofStore.Controllers
 
         private async Task SaveSaltAndPasswordToDB(Member? member, byte[] salt, string hashPassword)
         {
-            member.RoleId = Member.CustomerRole;
+            //member.RoleId = Member.AdminRole;    新增管理者
+            member.RoleId = Member.CustomerRole;  
             member.Password = hashPassword;
             member.Salt = salt;
             _context.Member.Add(member);
@@ -117,10 +124,9 @@ namespace MeowoofStore.Controllers
 
         private async Task SignInByClaimIdentity(Member? member)
         {
-                member = await _context.Member
-                                       .Where(m => m.Email == member.Email)
-                                       .Include(n => n.Role)
-                                       .SingleOrDefaultAsync();  //TODO 想辦法在其他地方載入?
+            member = await _context.Member
+                  .Include(m => m.Role)
+                  .SingleOrDefaultAsync(m => m.Email == member.Email);
 
             var claims = new List<Claim>
             {

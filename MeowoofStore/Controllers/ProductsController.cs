@@ -16,7 +16,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace MeowoofStore.Controllers
 {
-    [Authorize(Roles ="Administrator")]
+    [Authorize(Roles =nameof(RoleName.Administrator))]
     public class ProductsController : Controller
     {
         private readonly ApplicationDbContext _context;
