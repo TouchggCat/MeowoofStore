@@ -1,5 +1,7 @@
-﻿using MeowoofStore.Data;
+﻿using Azure.Core;
+using MeowoofStore.Data;
 using MeowoofStore.Models;
+using MeowoofStore.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -28,6 +30,19 @@ namespace MeowoofStore.Controllers.Api
                 return NotFound("No product !");
 
             return products;
+        }
+
+        [HttpGet("/api/check-stock")]
+        public IActionResult CheckStock(int itemId, int quantity)
+        {
+            var item = _context.Product.Find(itemId);
+            if (item == null)
+                return NotFound();
+
+            if (item.Stock >= quantity)
+                return Ok(new { IsAvailable = true });
+ 
+            return Ok(new { IsAvailable = false });
         }
     }
 }

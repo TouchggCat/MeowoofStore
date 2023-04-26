@@ -1,4 +1,5 @@
 ﻿using MeowoofStore.Data;
+using MeowoofStore.Models;
 using MeowoofStore.Models.StringKeys;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +21,10 @@ namespace MeowoofStore.Controllers
         public IActionResult List()
         {
             var order = _context.Order.ToList();
+
+            if (order.Count == 0)
+                return View(ViewName.EmptyOrder);
+
             return View(order);
         }
 

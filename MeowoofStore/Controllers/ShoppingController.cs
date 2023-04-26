@@ -60,9 +60,9 @@ namespace MeowoofStore.Controllers
             if (product == null)
                 return View(ViewName.NullView);
 
-            List<ShoppingCartViewModel>? shoppingCartViewModelList = GetShoppingCartListFromSession();
+            List<ShoppingCartViewModel>? shoppingCartViewModelList = GetShoppingCartListFromSessionOrNewCart();
             // 檢查是否已經包含相同的商品，如果是，增加數量並退出方法
-            if (IsItemAlreadyExistInCart(shoppingCartViewModelList, viewModel.id, viewModel.Quantity))
+            if (IsSameItemAlreadyExistInCart(shoppingCartViewModelList, viewModel.id, viewModel.Quantity))
                 return RedirectToAction(nameof(List));
 
             var shoppingCartViewModel = MappingToShoppingCartViewModel(product, viewModel);
@@ -93,8 +93,19 @@ namespace MeowoofStore.Controllers
             var order = MappingOrder(address, email, member.Id, receiverName, orderNumberGuid);
             _context.Order.Add(order);
 
+            // 取得所有需要更新的商品 ID
+            var productIds = shoppingCartViewModels.Select(item => item.Id).ToList();
+            // 從資料庫中查詢這些商品
+            var products = _context.Product.Where(p => productIds.Contains(p.Id)).ToList();
+
             foreach (var item in shoppingCartViewModels)
             {
+                var product = products.FirstOrDefault(p => p.Id == item.Id);
+                if (product != null)
+                    product.Stock -= item.Quantity;
+
+                _context.Product.Update(product);
+
                 var orderDetail = MappingOrderDetail(item.Id, orderNumberGuid, item.Price, item.Quantity, item.TotalPrice);
                 _context.OrderDetail.Add(orderDetail);
             }
@@ -145,7 +156,7 @@ namespace MeowoofStore.Controllers
                 HttpContext.Session.Remove(SessionKey);
         }
 
-        private List<ShoppingCartViewModel> GetShoppingCartListFromSession()
+        private List<ShoppingCartViewModel> GetShoppingCartListFromSessionOrNewCart()
         {
             if (!HttpContext.Session.Keys.Contains(ShoppingCartSessionKey.ShoppingCartListKey))
                 return new List<ShoppingCartViewModel>();
@@ -154,7 +165,7 @@ namespace MeowoofStore.Controllers
             return JsonSerializer.Deserialize<List<ShoppingCartViewModel>>(jsonString);
         }
 
-        private bool IsItemAlreadyExistInCart(List<ShoppingCartViewModel> shoppingCartViewModelList, int productId, int quantity)
+        private bool IsSameItemAlreadyExistInCart(List<ShoppingCartViewModel> shoppingCartViewModelList, int productId, int quantity)
         {
             var existingItem = shoppingCartViewModelList.SingleOrDefault(x => x.Product.Id == productId);
             if (existingItem != null)

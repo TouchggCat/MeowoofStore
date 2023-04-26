@@ -1,6 +1,5 @@
-﻿@*@model IEnumerable<MeowoofStore.Models.Product>*@
-@{
-    ViewData["Title"] = "產品管理";
+﻿@{
+    ViewData["Title"] = "MeoWoof-產品管理";
 }
 
 <h1>產品管理清單</h1>
@@ -85,7 +84,7 @@
             });
             $("#productsTable").on("click", " .js-delete", function () {
                 var deleteButton  =$(this);
-                 if(confirm("確定要刪除嗎? 要確定欸!??")){
+                 if(confirm("確定要刪除此商品嗎??")){
                      console.log("gggg");
                      $.ajax({
                         url: "api/Products/" + $(this).attr("product-id") + "?imageString="+$(this).attr("product-image"),

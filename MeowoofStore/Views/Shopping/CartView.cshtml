@@ -41,7 +41,7 @@
                         <input readonly="readonly" name="ShoppingCartViewModels[@i].Price" value="@Model[i].Price" style="border:none;" />
                     </td>
                     <td>
-                        <input readonly="readonly" name="ShoppingCartViewModels[@i].Quantity" value="@Model[i].Quantity" style="border:none;" />
+                        <input readonly="readonly" name="ShoppingCartViewModels[@i].Quantity" value="@Model[i].Quantity" style="border:none;"/>
                     </td>
                     <td>
                         <input readonly="readonly" name="ShoppingCartViewModels[@i].TotalPrice" value="@Model[i].TotalPrice" style="border:none;" />
@@ -72,7 +72,7 @@
 </table>
 <div class="d-grid gap-2">
     <!-- Button trigger modal -->
-    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#exampleModal">
+        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#exampleModal" id="js-checkstocks">
         去買單
     </button>
 </div>
@@ -132,5 +132,7 @@
                 }
             });
         });
+
+  
     </script>
 }
