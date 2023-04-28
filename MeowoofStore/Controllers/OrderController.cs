@@ -38,6 +38,23 @@ namespace MeowoofStore.Controllers
             return View(orderDetail);
         }
 
+        [Authorize(Roles = nameof(RoleName.Administrator))]
+        public IActionResult AdminDeleteOrder(Guid OrderNumber)
+        {
+            var order = _context.Order
+                                             .Where(n => n.OrderNumber == OrderNumber).SingleOrDefault();
+            if(order!=null)
+                 _context.Remove(order);
+
+            var orderDetail = _context.OrderDetail
+                                  .Where(n => n.OrderNumber == OrderNumber).ToList();
+            if(orderDetail!=null&&orderDetail.Count>0)
+                _context.Remove(orderDetail);
+
+            _context.SaveChanges();
+            return RedirectToAction(nameof(List));
+        }
+
         public IActionResult MemberOrder()
         {
             var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;

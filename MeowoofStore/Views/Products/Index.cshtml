@@ -91,7 +91,7 @@
                         method:"Delete",
                         success:function(){
                             console.log("Success Deleted");
-                            deleteButton.parents("tr").remove();
+                            dataTable.row(deleteButton.parents("tr")).remove().draw();
                         }
                      });
                  }

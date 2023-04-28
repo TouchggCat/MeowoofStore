@@ -1,9 +1,7 @@
-﻿@using MeowoofStore.ViewModels;
-@using System.Security.Claims;
-@model List<ShoppingCartViewModel>
+﻿@using System.Security.Claims;
 
 @{
-    ViewData["Title"] = "CartView";
+    ViewData["Title"] = "MeoWoof-購物車";
 }
 
 <h1>我的購物車</h1>
@@ -12,70 +10,46 @@
     int showItemCount = 0;
 }
 <form asp-action="CartView" method="post">
-<table class="table">
+    <table class="table" id="cartTable">
     <thead>
         <tr>
                 <th>
-                    @Html.DisplayNameFor(model => model[0].Product.Name)
+                    品名
                 </th>
                 <th>
-                    @Html.DisplayNameFor(model => model[0].Price)
+                    價格
                 </th>
                 <th>
-                    @Html.DisplayNameFor(model => model[0].Quantity)
+                    數量
                 </th>
                 <th>
-                    @Html.DisplayNameFor(model => model[0].TotalPrice)
+                    小計
                 </th>
+                <th></th>
         </tr>
     </thead>
     <tbody>
- @for (int i = 0; i < Model.Count; i++){
-            showItemCount++;
-                <tr>
-                    <td>
-                        <input hidden="hidden" name="ShoppingCartViewModels[@i].Id" value="@Model[i].Id" style="border:none;" />
-                        <input readonly="readonly" name="ShoppingCartViewModels[@i].Product.Name" value="@Model[i].Product.Name" style="border:none;" />
-                    </td>
-                    <td>
-                        <input readonly="readonly" name="ShoppingCartViewModels[@i].Price" value="@Model[i].Price" style="border:none;" />
-                    </td>
-                    <td>
-                        <input readonly="readonly" name="ShoppingCartViewModels[@i].Quantity" value="@Model[i].Quantity" style="border:none;"/>
-                    </td>
-                    <td>
-                        <input readonly="readonly" name="ShoppingCartViewModels[@i].TotalPrice" value="@Model[i].TotalPrice" style="border:none;" />
-                    </td>
-                </tr>
-}
-
-        <tr class="table-info">
-            <th>
-                總金額
-            </th>
-            <th>
-            </th>
-            <th>
-                共 @showItemCount 樣
-            </th>
-            <th>
-                共$  
-                    @foreach (var item in Model)
-                    {
-                        showPrice += item.TotalPrice;
-                    }
-                    @showPrice
-            </th>
-        </tr>
-
     </tbody>
 </table>
-<div class="d-grid gap-2">
-    <!-- Button trigger modal -->
-        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#exampleModal" id="js-checkstocks">
-        去買單
-    </button>
-</div>
+
+    <div class="fixed-bottom">
+        <div class="card">
+            <h5 class="card-header">確認付款金額</h5>
+            <div class="card-body">
+                <h5 class="card-title" id="js-totalItem"></h5>
+                <p class="card-text" id="js-totalSum"></p>
+
+                <div class="d-grid gap-2">
+                    <!-- Button trigger modal -->
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#exampleModal" id="js-checkstocks">
+                        去買單
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
 <br />
 <hr />
 
@@ -119,6 +93,78 @@
             </form>
  @section scripts{
     <script>
+        $(document).ready(function () {
+            var dataTable=$("#cartTable").DataTable({
+                "paging": false, // 禁用分頁功能
+                "info": false, // 禁用左下顯示幾筆功能
+                 "lengthMenu":false,
+                ajax: {
+                    url: "/api/Shopping/GetCartData/",
+                    dataSrc: ""
+                },
+                columns: [
+                    {
+                        data: "product.name"
+                    },
+                    {
+                        data: "price"
+                    },
+                    {
+                        data: "quantity"    
+                    },
+                    {
+                        data: "totalPrice",
+                    },
+                    {
+                        data: "id",
+                        render: function (data, type, row) {
+                            return "<a class='btn btn-link'><img src='/images/icon/trash_can_icon.png' width='22' product-id='" + data + "' class='js-delete' /></a>";
+                        }
+                    }],
+                language: {
+                    search: "搜尋",
+                    emptyTable: "無資料"
+                },
+                initComplete: function () {
+                    var totalPriceSum = 0;
+
+   
+                    dataTable.rows().every(function () {
+                        var data = this.data();
+                        totalPriceSum += data.totalPrice;
+                    });
+
+                    $("#js-totalSum").text("總金額 " + totalPriceSum + " 元");
+                    $("#js-totalItem").text("共 " + dataTable.data().length + " 件商品");
+
+                }
+
+            });
+
+            $("#cartTable").on("click", " .js-delete", function () {
+                var deleteButton = $(this);
+                if (confirm("確定要刪除此商品嗎??")) {
+                    console.log("gggg");
+                    $.ajax({
+                        url: "/api/Shopping/DeleteProductsById/" + $(this).attr("product-id"),
+                        method: "Delete",
+                        success: function () {
+                            console.log("Success Deleted");
+                            dataTable.row(deleteButton.parents("tr")).remove().draw();
+                            var totalPriceSum = 0;
+                            dataTable.rows().every(function () {
+                                var data = this.data();
+                                totalPriceSum += data.totalPrice;
+                            });
+                            $("#js-totalSum").text("總金額 " + totalPriceSum + " 元");
+                            $("#js-totalItem").text("共 " + dataTable.data().length + " 件商品");
+                        }
+                    });
+                }
+            });
+        });
+
+
         $("#js-fillUserInfo").on("click",()=>{
             $.ajax({
                     url: "/api/Account/",

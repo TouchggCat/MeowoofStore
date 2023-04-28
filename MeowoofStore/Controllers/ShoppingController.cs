@@ -54,6 +54,7 @@ namespace MeowoofStore.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult AddToCart(AddToCartViewModel viewModel)
         {
             var product = _context.Product?.SingleOrDefault(n => n.Id == viewModel.id);
@@ -76,15 +77,15 @@ namespace MeowoofStore.Controllers
         {
             if (HttpContext.Session.Keys.Contains(ShoppingCartSessionKey.ShoppingCartListKey))
             {
-                List<ShoppingCartViewModel>? shoppingCartItemList = GetShoppingCartItemsFromSession();
-                return View(shoppingCartItemList);
+                //List<ShoppingCartViewModel>? shoppingCartItemList = GetShoppingCartItemsFromSession();
+                return View();
             }
 
             return View(ViewName.EmptyCart,StringModel.ShoppingCartIsEmpty);
         }
 
         [HttpPost]
-        public IActionResult CartView(string receiverName, string address, string email, List<ShoppingCartViewModel> shoppingCartViewModels)
+        public IActionResult CartView(string receiverName, string address, string email)
         {
             var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
             var member = _context.Member?.Where(n=>n.Email == userEmail).SingleOrDefault();
@@ -94,6 +95,7 @@ namespace MeowoofStore.Controllers
             _context.Order.Add(order);
 
             // 取得所有需要更新的商品 ID
+            List<ShoppingCartViewModel>? shoppingCartViewModels = GetShoppingCartItemsFromSession();
             var productIds = shoppingCartViewModels.Select(item => item.Id).ToList();
             // 從資料庫中查詢這些商品
             var products = _context.Product.Where(p => productIds.Contains(p.Id)).ToList();
