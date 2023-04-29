@@ -33,6 +33,40 @@
     <tbody>
     </tbody>
 </table>
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">請確認商品數量</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <!-- Form-->
+            <div class="modal-body">
+                <input type="hidden" name="id" value="" class="js-itemId" />
+                <div class="mb-3">
+                        <label for="exampleInputEmail1" class="form-label" >品名</label>
+                        <input class="form-control" name="receiverName" id="js-productName" required readonly>
+                </div>
+                <div class="mb-3">
+                        <label for="exampleInputEmail1" class="form-label" >價格</label>
+                        <input type="email" class="form-control" id="js-price" aria-describedby="emailHelp" name="email" required readonly>
+                </div>
+                <div class="mb-3">
+                    <label for="exampleInputPassword1" class="form-label">數量</label>
+                    <input class="form-control" id="js-quantity" name="address" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button class="btn btn-primary js-submit">確認</button>
+                <button hidden="hidden" type="submit" id="submitBtn"></button>
+            </div>
+
+        </div>
+    </div>
+</div>
 @section scripts{
     <script>
         $(document).ready(function(){
@@ -63,7 +97,7 @@
                     {
                         data:"id",
                         render:function(data){
-                            return "<a href='/Shopping/AddToCart/"+ data+"' class='btn btn-info'> 加入購物車 </a>"
+                            return "<button type='button' class='btn btn-info js-loadCart'' data-bs-toggle='modal' data-bs-target='#exampleModal' product-id='" + data + "'>加入購物車</button>";
                         }
                     }
                 ],
@@ -81,6 +115,89 @@
                     }
                 }
             });
+
+            $("#shoppingList").on("click", ".js-loadCart",function() {
+                var addCartButton = $(this);
+                console.log("ajax");
+                $.ajax({
+                    url: "/api/Shopping/LoadCartItem/" + $(this).attr("product-id"),
+                    method: "Get",
+                    success: function (data) {
+                        console.log("SuckSex");
+                        console.log(data);
+                        $("#js-productName").val(data.name);
+                        $("#js-price").val(data.price);
+                        $("#js-quantity").val(data.quantity);
+
+                    },
+                    error: function () {
+                        alert('讀取購物車商品錯誤');
+                    }
+                })
+
+                $(".js-submit").on("click", function () {
+
+                        var itemId = addCartButton.attr("product-id");
+                        var itemQuantity = $("#js-quantity").val();
+                        var url = '/api/check-stock?itemId=' + itemId + '&quantity=' + itemQuantity;
+
+                        $.ajax({
+                            url: url,
+                            method: 'GET',
+                            success: function (response) {
+                                if (response.isAvailable) {
+                                    // 如果庫存足夠，觸發提交按鈕的 click 事件
+                                    $('#submitBtn').click();
+                                } else {
+                                    // 如果庫存不足，顯示提示
+                                    alert('庫存不足');
+                                }
+                            },
+                            error: function () {
+                                // 處理錯誤
+                                alert('檢查庫存時發生錯誤');
+                            }
+                        });
+
+                    $('#submitBtn').on("click",function(){
+
+                        const data = {
+                            id: addCartButton.attr("product-id"),
+                            name: $("#js-productName").val(),
+                            price: $("#js-price").val(),
+                            quantity: $("#js-quantity").val()
+                        };
+                        $.ajax({
+                            method: "POST",
+                            url: "/api/Shopping/AddToCart/",
+                            contentType: "application/json",
+                            data: JSON.stringify(data),
+                            success: function (data, textStatus, xhr) {
+                                if (xhr.status === 200) {
+                                    if (data === "AddedSameItem") {
+                                        console.log("AddedSameItem");
+                                        $(".btn-close").click();
+                                    } else if (data === "SuccessAddToCart") {
+                                        console.log("SuccessAddToCart");
+                                        $(".btn-close").click();
+                                    }
+                                } else {
+                                    // Handle other HTTP status codes
+                                    console.log("加入購物車失敗");
+                                }
+                            },
+                            error: function (xhr, textStatus, errorThrown) {
+                                // Handle error
+                                console.log("加入購物車失敗");
+                            }
+                        });
+
+                    })
+                  
+                })
+
+            })
+            
         });
 
     </script>

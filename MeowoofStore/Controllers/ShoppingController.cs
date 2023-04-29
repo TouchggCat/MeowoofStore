@@ -32,11 +32,11 @@ namespace MeowoofStore.Controllers
         }
         public IActionResult List()
         {
-            var products = _context.Product?.Select(n => n);
-            if(products != null )
-               return View(products);
+            var products = _context.Product?.Select(n => n).ToList();
+            if(products.Count>0 )
+               return View();
 
-            return View(ViewName.NullView);
+            return View(ViewName.EmptyProduct);
         }
         public IActionResult AddToCart(int id) 
         {
@@ -50,7 +50,7 @@ namespace MeowoofStore.Controllers
                 return View(viewModel);
             }
 
-            return View(ViewName.NullView);
+            return View(ViewName.EmptyProduct);
         }
 
         [HttpPost]
@@ -59,7 +59,7 @@ namespace MeowoofStore.Controllers
         {
             var product = _context.Product?.SingleOrDefault(n => n.Id == viewModel.id);
             if (product == null)
-                return View(ViewName.NullView);
+                return View(ViewName.EmptyProduct);
 
             List<ShoppingCartViewModel>? shoppingCartViewModelList = GetShoppingCartListFromSessionOrNewCart();
             // 檢查是否已經包含相同的商品，如果是，增加數量並退出方法
