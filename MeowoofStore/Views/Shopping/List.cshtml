@@ -61,7 +61,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
                 <button class="btn btn-primary js-submit">確認</button>
-                <button hidden="hidden" type="submit" id="submitBtn"></button>
+                <button hidden="hidden" type="button" id="submitBtn"></button>
             </div>
 
         </div>
@@ -115,12 +115,13 @@
                     }
                 }
             });
-
+            var productId;
             $("#shoppingList").on("click", ".js-loadCart",function() {
                 var addCartButton = $(this);
+                productId = addCartButton.attr("product-id");
                 console.log("ajax");
                 $.ajax({
-                    url: "/api/Shopping/LoadCartItem/" + $(this).attr("product-id"),
+                    url: "/api/Shopping/LoadCartItem/" + productId,
                     method: "Get",
                     success: function (data) {
                         console.log("SuckSex");
@@ -134,19 +135,21 @@
                         alert('讀取購物車商品錯誤');
                     }
                 })
+            })
 
-                $(".js-submit").on("click", function () {
-
-                        var itemId = addCartButton.attr("product-id");
+           $(".js-submit").on("click", function () {
+                $(".js-submit").prop('disabled', true);
+                var itemId = productId;
                         var itemQuantity = $("#js-quantity").val();
                         var url = '/api/check-stock?itemId=' + itemId + '&quantity=' + itemQuantity;
 
-                        $.ajax({
+                $.ajax({
                             url: url,
                             method: 'GET',
                             success: function (response) {
                                 if (response.isAvailable) {
                                     // 如果庫存足夠，觸發提交按鈕的 click 事件
+                                console.log("庫存足夠");
                                     $('#submitBtn').click();
                                 } else {
                                     // 如果庫存不足，顯示提示
@@ -156,17 +159,25 @@
                             error: function () {
                                 // 處理錯誤
                                 alert('檢查庫存時發生錯誤');
-                            }
-                        });
-
+                        },
+                        complete: function () {
+                            // Re-enable the submit button
+                            $(".js-submit").prop('disabled', false);
+                        }
+                 });
+             })
+                        var clickCount=0;
                     $('#submitBtn').on("click",function(){
-
+                        //避免網路延遲重複送出多次非同步請求  
+                        $('#submitBtn').prop('disabled', true);
                         const data = {
-                            id: addCartButton.attr("product-id"),
+                        id: productId,
                             name: $("#js-productName").val(),
                             price: $("#js-price").val(),
                             quantity: $("#js-quantity").val()
                         };
+                        console.log("Request1");
+                        clickCount=clickCount+1;
                         $.ajax({
                             method: "POST",
                             url: "/api/Shopping/AddToCart/",
@@ -174,12 +185,11 @@
                             data: JSON.stringify(data),
                             success: function (data, textStatus, xhr) {
                                 if (xhr.status === 200) {
-                                    if (data === "AddedSameItem") {
-                                        console.log("AddedSameItem");
+                                    if (data === "SuccessAddToCart") {
+                                        console.log("SuccessAddToCart"+clickCount);
                                         $(".btn-close").click();
-                                    } else if (data === "SuccessAddToCart") {
-                                        console.log("SuccessAddToCart");
-                                        $(".btn-close").click();
+                                    } else{
+                                        console.log("加入購物車失敗");
                                     }
                                 } else {
                                     // Handle other HTTP status codes
@@ -189,16 +199,16 @@
                             error: function (xhr, textStatus, errorThrown) {
                                 // Handle error
                                 console.log("加入購物車失敗");
+                            },
+                            complete: function () {
+                                // Re-enable the submit button
+                                $('#submitBtn').prop('disabled', false);
                             }
                         });
 
                     })
                   
-                })
-
-            })
+            });
             
-        });
-
     </script>
 }

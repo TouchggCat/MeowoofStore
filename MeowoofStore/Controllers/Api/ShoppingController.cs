@@ -8,6 +8,7 @@ using MeowoofStore.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Collections.Generic;
@@ -76,19 +77,27 @@ namespace MeowoofStore.Controllers.Api
             if (product == null)
                 return NotFound();
 
-            var shoppingCartViewModel = MappingToShoppingCartViewModel(product, viewModel);
 
             List<ShoppingCartViewModel>? shoppingCartViewModelList = GetShoppingCartListFromSessionOrNewCart();
-            // 檢查是否已經包含相同的商品，如果是，增加數量並退出方法
-            if (IsSameItemAlreadyExistInCart(shoppingCartViewModelList, viewModel.id,viewModel.Quantity))
-                return Ok("AddedSameItem");
-            //return RedirectToAction(nameof(MeowoofStore.Controllers.ShoppingController.List), ControllerName.Shopping);
 
-       
-            shoppingCartViewModelList.Add(shoppingCartViewModel);
+            var shoppingCartViewModel = shoppingCartViewModelList.FirstOrDefault(n => n.Id == viewModel.id);
+
+            if (shoppingCartViewModel == null)
+            {
+                shoppingCartViewModel = MappingToShoppingCartViewModel(product, viewModel);
+
+                shoppingCartViewModelList.Add(shoppingCartViewModel);
+            }
+            else
+            {
+                shoppingCartViewModel.Quantity += viewModel.Quantity;
+            }
+            // 檢查是否已經包含相同的商品，如果是，增加數量並退出方法
+            //if (IsSameItemAlreadyExistInCart(shoppingCartViewModelList, viewModel.id,viewModel.Quantity))
+            //    return Ok("AddedSameItem");
+
             SaveShoppingCartListToSession(shoppingCartViewModelList);
 
-            //return RedirectToAction(nameof(ShoppingController),ControllerName.Shopping);
             return Ok("SuccessAddToCart");
         }
 
