@@ -18,16 +18,8 @@ namespace MeowoofStore.Models.Utilities
             return salt;
         }
 
-        public static string HashEnteredPassword<T>(T? model, byte[] salt, string passwordPropertyName) where T : class
+        public static string HashEnteredPassword(byte[] salt, string password) 
         {
-            //PropertyInfo? passwordProp = typeof(T).GetProperty(passwordPropertyName);
-            var passwordProp = model.GetType().GetProperty(passwordPropertyName);
-
-            if (passwordProp == null || !(passwordProp.GetValue(model) is string password))
-            {
-                throw new ArgumentException("Entity does not have a string property named 'Password'");
-            }
-
             byte[] hashedByte = KeyDerivation.Pbkdf2(
                 password: password,
                 salt: salt,

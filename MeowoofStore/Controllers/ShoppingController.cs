@@ -38,52 +38,19 @@ namespace MeowoofStore.Controllers
 
             return View(ViewName.EmptyProduct);
         }
-        public IActionResult AddToCart(int id) 
-        {
-            int defaultQuantity = 1;
-            var product = _context.Product?.SingleOrDefault(n => n.Id == id);
-            if(product != null)
-            {
-                var viewModel = _lMapper.Map<AddToCartViewModel>(product);
-                viewModel.Quantity = defaultQuantity;
-
-                return View(viewModel);
-            }
-
-            return View(ViewName.EmptyProduct);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult AddToCart(AddToCartViewModel viewModel)
-        {
-            var product = _context.Product?.SingleOrDefault(n => n.Id == viewModel.id);
-            if (product == null)
-                return View(ViewName.EmptyProduct);
-
-            List<ShoppingCartViewModel>? shoppingCartViewModelList = GetShoppingCartListFromSessionOrNewCart();
-            // 檢查是否已經包含相同的商品，如果是，增加數量並退出方法
-            if (IsSameItemAlreadyExistInCart(shoppingCartViewModelList, viewModel.id, viewModel.Quantity))
-                return RedirectToAction(nameof(List));
-
-            var shoppingCartViewModel = MappingToShoppingCartViewModel(product, viewModel);
-            shoppingCartViewModelList.Add(shoppingCartViewModel);
-            SaveShoppingCartListToSession(shoppingCartViewModelList);
-
-            return RedirectToAction(nameof(List));
-        }
+      
 
         public IActionResult CartView()
         {
             if (HttpContext.Session.Keys.Contains(ShoppingCartSessionKey.ShoppingCartListKey))
             {
-                //List<ShoppingCartViewModel>? shoppingCartItemList = GetShoppingCartItemsFromSession();
                 return View();
             }
 
             return View(ViewName.EmptyCart,StringModel.ShoppingCartIsEmpty);
         }
 
+        [ValidateAntiForgeryToken]
         [HttpPost]
         public IActionResult CartView(string receiverName, string address, string email)
         {
@@ -167,29 +134,5 @@ namespace MeowoofStore.Controllers
             return JsonSerializer.Deserialize<List<ShoppingCartViewModel>>(jsonString);
         }
 
-        private bool IsSameItemAlreadyExistInCart(List<ShoppingCartViewModel> shoppingCartViewModelList, int productId, int quantity)
-        {
-            var existingItem = shoppingCartViewModelList.SingleOrDefault(x => x.Product.Id == productId);
-            if (existingItem != null)
-            {
-                existingItem.Quantity += quantity;
-                SaveShoppingCartListToSession(shoppingCartViewModelList);
-                return true;
-            }
-            return false;
-        }
-
-        private ShoppingCartViewModel MappingToShoppingCartViewModel(Product product, AddToCartViewModel viewModel)
-        {
-            var shoppingCartViewModel = _lMapper.Map<ShoppingCartViewModel>(viewModel);
-            shoppingCartViewModel.Product = product;
-            return shoppingCartViewModel;
-        }
-
-        private void SaveShoppingCartListToSession(List<ShoppingCartViewModel> shoppingCartViewModelList)
-        {
-            var serializedJsonString = JsonSerializer.Serialize(shoppingCartViewModelList);
-            HttpContext.Session.SetString(ShoppingCartSessionKey.ShoppingCartListKey, serializedJsonString);
-        }
     }
 }

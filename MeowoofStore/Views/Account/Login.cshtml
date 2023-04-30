@@ -40,10 +40,45 @@
                 <button type="button" class="btn btn-success js-adminDemo">Admin</button>
                 <button type="button" class="btn btn-secondary js-customerDemo">Customer</button>
             </div>
+            <br />
+            <div>
+                <p data-bs-toggle='modal' data-bs-target='#exampleModal' type="button" class="btn-link">忘記密碼</p>
+            </div>
+
         </form>
     </div>
 </div>
 
+
+
+<!-- Modal -->
+<form asp-action="ForgetPassword">
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">填寫信箱重設密碼</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <!-- Form-->
+            <div class="modal-body">
+                <input type="hidden" name="id" value="" class="js-itemId" />
+                <div class="mb-3">
+                    <label for="exampleInputEmail1" class="form-label">信箱</label>
+                    <input class="form-control" type="email" id="js-productName" required name="userEmail">
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button class="btn btn-primary js-submit">確認</button>
+                <button hidden="hidden" type="button" id="submitBtn"></button>
+            </div>
+
+        </div>
+    </div>
+</div>
+</form>
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}

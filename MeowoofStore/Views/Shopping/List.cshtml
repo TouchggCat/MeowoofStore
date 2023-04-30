@@ -166,7 +166,7 @@
                         }
                  });
              })
-                        var clickCount=0;
+
                     $('#submitBtn').on("click",function(){
                         //避免網路延遲重複送出多次非同步請求  
                         $('#submitBtn').prop('disabled', true);
@@ -177,7 +177,6 @@
                             quantity: $("#js-quantity").val()
                         };
                         console.log("Request1");
-                        clickCount=clickCount+1;
                         $.ajax({
                             method: "POST",
                             url: "/api/Shopping/AddToCart/",
@@ -186,19 +185,19 @@
                             success: function (data, textStatus, xhr) {
                                 if (xhr.status === 200) {
                                     if (data === "SuccessAddToCart") {
-                                        console.log("SuccessAddToCart"+clickCount);
+                                        console.log("SuccessAddToCart") ;
                                         $(".btn-close").click();
                                     } else{
-                                        console.log("加入購物車失敗");
+                                      alert('加入購物車失敗');
                                     }
                                 } else {
                                     // Handle other HTTP status codes
-                                    console.log("加入購物車失敗");
+                                      alert('加入購物車失敗');
                                 }
                             },
                             error: function (xhr, textStatus, errorThrown) {
                                 // Handle error
-                                console.log("加入購物車失敗");
+                                       alert('加入購物車失敗');
                             },
                             complete: function () {
                                 // Re-enable the submit button

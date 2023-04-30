@@ -37,7 +37,7 @@ namespace MeowoofStore.Models.Validators
 
             // Compute the hash of the user-provided password using the retrieved salt
             var hashPassword = PasswordAndSaltProcess
-                                    .HashEnteredPassword(loginViewModel, member.Salt, nameof(loginViewModel.Password));
+                                    .HashEnteredPassword( member.Salt, loginViewModel.Password);
 
             // Compare the computed hash with the stored hash
             if (hashPassword != hashedPassword)
