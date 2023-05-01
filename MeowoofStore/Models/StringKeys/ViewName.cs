@@ -7,5 +7,8 @@
         public static readonly string EmptyCart = "EmptyCart";
 
         public static readonly string EmptyOrder= "EmptyOrder";
+
+        public static readonly string RegisterConfirmed = "RegisterConfirmed";
+
     }
 }

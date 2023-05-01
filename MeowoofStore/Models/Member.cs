@@ -33,6 +33,8 @@ namespace MeowoofStore.Models
         [MaxLength(16)]
         public byte[]? Salt { get; set; }
 
+        public bool IsEnabled { get; set; }
+
         public Role? Role { get; set; }
         public byte RoleId { get; set; }
 

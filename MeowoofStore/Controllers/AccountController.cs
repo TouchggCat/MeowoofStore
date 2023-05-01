@@ -49,23 +49,34 @@ namespace MeowoofStore.Controllers
                 return View(viewModel);
 
             var member = _IMapper.Map<Member>(viewModel);
+            member.IsEnabled = false;
+
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Email,member.Email)
+            };
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            string token = GenerateJWT(claimsIdentity);
+            var callbackUrl = $"https://localhost:7072/Account/RegisterConfirmed?token={token}";
+            var mailBody = $"<h1>MeoWoof會員一{member.MemberName}，您好:</h1>" +
+                                         $"<br><h2>請點擊連結完成註冊<a href='{callbackUrl}'>請點我</a></h2>" +
+                                         $"<br>" +
+                                         $"<h2>如未註冊請忽略本信件</h2>";
+            var mailSubject = "[MeoWoof會員]一註冊確認信";
+            MailMessage mail = SetMailMessage(viewModel.Email, mailSubject, mailBody);
+            SendMail(mail);
 
             try
             {
-                // Generate a random salt value
                 byte[] salt = PasswordAndSaltProcess.SaltGenerator();
 
-                // Hash the user's password
-                //string hashPassword = HashUserPassword(member, salt);
                 string hashPassword = PasswordAndSaltProcess.HashEnteredPassword(salt,member.Password);
 
-
-                // Save the salt and hashed password to your database
                 await SaveSaltAndPasswordToDB(member, salt, hashPassword);
 
-                await SignInByClaimIdentity(member);
+                return Content("<script>alert('註冊信件已送出，請至信箱查看');window.location.href='https://localhost:7072/'</script>", "text/html", System.Text.Encoding.UTF8);
 
-                return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);
             }
             catch (Exception ex)
             {
@@ -75,6 +86,19 @@ namespace MeowoofStore.Controllers
             return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);
         }
 
+        public IActionResult RegisterConfirmed(string token)
+        {
+            string email = ValidateToken(token);
+
+            var member = _context.Member.Where(m => m.Email == email).FirstOrDefault();
+            if (member != null)
+            {
+                member.IsEnabled = true;
+                return View(ViewName.RegisterConfirmed, StringModel.RegisterConfirmed);
+            }
+
+            return View(ViewName.RegisterConfirmed, StringModel.RegisterFailed);
+        }
 
         public IActionResult Login(string returnUrl)
         {
@@ -94,6 +118,7 @@ namespace MeowoofStore.Controllers
                                        .Where(m => m.Email == viewModel.Email)
                                        .Include(n => n.Role)
                                        .SingleOrDefaultAsync();
+
 
             if (!IsValidLogin(viewModel, _context))
                 return NotFound();
@@ -124,24 +149,101 @@ namespace MeowoofStore.Controllers
         {
             var member = _context.Member.Where(m => m.Email == userEmail).SingleOrDefault();
             if (member == null)
-                return Content("<script>alert('未註冊的帳號，請確認輸入是否正確');window.location.href='https://localhost:7072/Login/ForgetPassword'</script>", "text/html", System.Text.Encoding.UTF8);
+                return Content("<script>alert('未註冊的帳號，請確認輸入是否正確');window.location.href='https://localhost:7072/Account/Login'</script>", "text/html", System.Text.Encoding.UTF8);
 
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Email,member.Email)
             };
+
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             string token = GenerateJWT(claimsIdentity);
             var callbackUrl = $"https://localhost:7072/Account/ResetPassword?token={token}";
+            var mailBody = $"<h1>MeoWoof會員一{member.MemberName}，您好:</h1><br><h2>如欲重新設定密碼<a href='{callbackUrl}'>請點我</a></h2>";
+            var mailSubject= "[MeoWoof會員]一密碼重設通知信";
+            MailMessage mail = SetMailMessage(userEmail, mailSubject,mailBody);
+            SendMail(mail);
 
-            MailMessage mail = new MailMessage();
-            mail.From = new MailAddress(SendingMailServiceKey.sendMailServiceAccount, "MeoWoofStore");   //前面是發信email後面是顯示的名稱
-            mail.To.Add(userEmail);  //收信者email from 參數
-            mail.Subject = "[MeoWoof會員]一密碼重設通知信"; 
-            mail.SubjectEncoding = System.Text.Encoding.UTF8; 
-            mail.IsBodyHtml = true;   //內容使用html
-            mail.Body = $"<h1>MeoWoof會員一{member.MemberName}，您好:</h1><br><h2>如欲重新設定密碼<a href='{callbackUrl}'>請點我</a></h2>";
-            mail.BodyEncoding = System.Text.Encoding.UTF8;  
+            return Content("<script>alert('信件已送出，請至信箱查看');window.location.href='https://localhost:7072/'</script>", "text/html", System.Text.Encoding.UTF8); 
+                                                                                                                                                                //window.location.href跳轉業面
+        }
+
+        public IActionResult ResetPassword(string token)
+        {
+            ViewBag.Token = token;
+
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult>  ResetPassword(ResetPasswordViewModel viewModel)
+        {
+            if (!ModelState.IsValid)
+                return View();
+
+            string email = ValidateToken(viewModel.Token);
+
+            var member = _context.Member.Where(m => m.Email == email).FirstOrDefault();
+
+            try
+            {
+                byte[] salt = PasswordAndSaltProcess.SaltGenerator();
+                string hashPassword = PasswordAndSaltProcess.HashEnteredPassword(salt, viewModel.Password);
+
+                await SaveSaltAndPasswordToDB(member, salt, hashPassword);
+
+                await SignInByClaimIdentity(member);
+
+                return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "重設密碼發生錯誤，請稍後再試。");
+            }
+            return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);
+        }
+
+        private string ValidateToken(string token )
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_configuration["JWT:KEY"]);
+
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ClockSkew = TimeSpan.Zero
+            };
+            SecurityToken validatedToken;
+            var claimsPrincipal = tokenHandler.ValidateToken(token, tokenValidationParameters, out validatedToken);
+            ClaimsIdentity claimsIdentity = claimsPrincipal.Identity as ClaimsIdentity;
+            var emailClaim = claimsIdentity.FindFirst(ClaimTypes.Email);
+            var email = emailClaim.Value;
+            return email;
+        }
+
+        private string GenerateJWT(ClaimsIdentity claimsIdentity)
+        {
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:KEY"]));
+
+            var jwt = new JwtSecurityToken
+            (
+                issuer : _configuration["JWT:Issuer"],
+                audience: _configuration["JWT:audience"],
+                claims:claimsIdentity.Claims,
+                expires:DateTime.Now.AddMinutes(10),
+                signingCredentials:new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256)
+            );
+                
+            var token = new JwtSecurityTokenHandler().WriteToken(jwt);
+            return token;
+        }
+
+        private static void SendMail(MailMessage mail)
+        {
             try
             {
                 using (SmtpClient client = new SmtpClient())
@@ -161,86 +263,20 @@ namespace MeowoofStore.Controllers
             {
                 mail.Dispose();
             }
-            return Content("<script>alert('信件已送出，請至信箱查看');window.location.href='https://localhost:7072/'</script>", "text/html", System.Text.Encoding.UTF8);    //localhost版本
-                                                                                                                                                                 //return Content("<script>alert('信件已送出，請至信箱查看');window.location.href='http://localhost/Home/index'</script>", "text/html", System.Text.Encoding.UTF8);  //IIS版本
-                                                                                                                                                                 //window.location.href跳轉業面
         }
 
-        public IActionResult ResetPassword(string token)
+        private static MailMessage SetMailMessage(string userEmail,string mailSubject,string mailBody)
         {
-            ViewBag.Token = token;
-
-            return View();
+            MailMessage mail = new MailMessage();
+            mail.From = new MailAddress(SendingMailServiceKey.sendMailServiceAccount, "MeoWoofStore");   //前面是發信email後面是顯示的名稱
+            mail.To.Add(userEmail);  //收信者email from 參數
+            mail.Subject = mailSubject;
+            mail.SubjectEncoding = System.Text.Encoding.UTF8;
+            mail.IsBodyHtml = true;   //內容使用html
+            mail.Body = mailBody;
+            mail.BodyEncoding = System.Text.Encoding.UTF8;
+            return mail;
         }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult>  ResetPassword(ResetPasswordViewModel viewModel)
-        {
-            if (!ModelState.IsValid)
-                return View();
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_configuration["JWT:KEY"]);
-
-            var tokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                ClockSkew = TimeSpan.Zero
-            };
-            SecurityToken validatedToken;
-            var claimsPrincipal = tokenHandler.ValidateToken(viewModel.Token, tokenValidationParameters, out validatedToken);
-            ClaimsIdentity claimsIdentity = claimsPrincipal.Identity as ClaimsIdentity;
-            var emailClaim = claimsIdentity.FindFirst(ClaimTypes.Email);
-            var email = emailClaim.Value;
-
-
-            var member =_context.Member.Where(m=>m.Email == email).FirstOrDefault();
-
-            try
-            {
-                // Generate a random salt value
-                byte[] salt = PasswordAndSaltProcess.SaltGenerator();
-
-                // Hash the user's password
-                //string hashPassword = HashUserPassword(member, salt);
-                string hashPassword = PasswordAndSaltProcess.HashEnteredPassword(salt, viewModel.Password);
-
-
-                // Save the salt and hashed password to your database
-                await SaveSaltAndPasswordToDB(member, salt, hashPassword);
-
-                await SignInByClaimIdentity(member);
-
-                return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError("", "註冊時發生錯誤，請稍後再試。");
-            }
-               return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);
-        }
-
-            private string GenerateJWT(ClaimsIdentity claimsIdentity)
-        {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:KEY"]));
-
-            var jwt = new JwtSecurityToken
-            (
-                issuer : _configuration["JWT:Issuer"],
-                audience: _configuration["JWT:audience"],
-                claims:claimsIdentity.Claims,
-                expires:DateTime.Now.AddMinutes(10),
-                signingCredentials:new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256)
-            );
-                
-            var token = new JwtSecurityTokenHandler().WriteToken(jwt);
-            return token;
-        }
-
 
         private async Task SaveSaltAndPasswordToDB(Member? member, byte[] salt, string hashPassword)
         {
