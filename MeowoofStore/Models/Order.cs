@@ -27,7 +27,7 @@ namespace MeowoofStore.Models
         public DateTime OrderDate { get; set; }
 
         [DisplayName("已寄送")]
-        public bool IsShopping { get; set; }
+        public bool IsShipping { get; set; }
 
         public int MemberId { get; set; }
 

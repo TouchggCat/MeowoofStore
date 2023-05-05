@@ -26,10 +26,7 @@
                 @Html.DisplayNameFor(model => model.OrderDate)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Member)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IsShopping)
+                @Html.DisplayNameFor(model => model.IsShipping)
             </th>
             <th></th>
         </tr>
@@ -52,11 +49,8 @@
             <td>
                 @Html.DisplayFor(modelItem => item.OrderDate)
             </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Member.Address)
-            </td>
                 <td>
-                    @Html.DisplayFor(modelItem => item.IsShopping)
+                    <input asp-for="@item.IsShipping" type="checkbox" class="js-checkBox" order-id="@item.Id"/>
                 </td>
             <td>
                     <a asp-action="AdminOrderDetail" asp-route-OrderNumber="@item.OrderNumber">訂單明細</a> |
@@ -66,3 +60,25 @@
 }
     </tbody>
 </table>
+
+@section scripts{
+    <script>
+        $(document).ready(function () {
+        $(".js-checkBox").on("click",function(){
+            var thisCheckBox=$(this);
+            $.ajax({
+                url:"/api/Order/"+thisCheckBox.attr("order-id"),
+                method:"POST",
+                success:function(data){
+                        if (data === "ChangedProperty")
+                    console.log("SuccessToChangeProperty");
+                },
+                error:function(){
+                        console.log("FailToChangeProperty");
+                        alert('FailToChangeProperty');
+                }
+            })
+        })
+        })
+    </script>
+}

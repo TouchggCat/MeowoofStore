@@ -31,6 +31,10 @@ namespace MeowoofStore.Controllers
         [Authorize(Roles = nameof(RoleName.Administrator))]
         public IActionResult AdminOrderDetail(Guid OrderNumber)
         {
+            var order = _context.Order
+           .Where(n => n.OrderNumber == OrderNumber).SingleOrDefault();
+            ViewBag.OrderDate = order.OrderDate;
+
             var orderDetail = _context.OrderDetail
                                              .Where(n => n.OrderNumber == OrderNumber)
                                              .Include(n => n.Product).ToList();
@@ -69,9 +73,9 @@ namespace MeowoofStore.Controllers
 
         public IActionResult MemberOrderDetail(Guid OrderNumber)
         {
-            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
-            var order = _context.Order.Include(n => n.Member)                          //確認為登入者訂單號
-                .Where(n => n.Email == userEmail && n.OrderNumber == OrderNumber);
+            var order = _context.Order
+                .Where(n =>n.OrderNumber == OrderNumber).SingleOrDefault();
+            ViewBag.OrderDate = order.OrderDate;
 
             if (order == null)
                 return View(ViewName.EmptyCart);

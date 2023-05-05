@@ -26,7 +26,7 @@
                 @Html.DisplayNameFor(model => model.OrderDate)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.IsShopping)
+                @Html.DisplayNameFor(model => model.IsShipping)
             </th>
             <th></th>
         </tr>
@@ -50,7 +50,10 @@
                 @Html.DisplayFor(modelItem => item.OrderDate)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.IsShopping)
+                @{
+                    string shippingState=item.IsShipping==false? "未寄送" : "已寄送" ;
+                }
+                @shippingState
             </td>
             <td>
                     <a asp-action="MemberOrderDetail" asp-route-OrderNumber="@item.OrderNumber">訂單詳細</a>

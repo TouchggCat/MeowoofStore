@@ -124,7 +124,6 @@
                     url: "/api/Shopping/LoadCartItem/" + productId,
                     method: "Get",
                     success: function (data) {
-                        console.log("SuckSex");
                         console.log(data);
                         $("#js-productName").val(data.name);
                         $("#js-price").val(data.price);
@@ -152,12 +151,10 @@
                                 console.log("庫存足夠");
                                     $('#submitBtn').click();
                                 } else {
-                                    // 如果庫存不足，顯示提示
                                     alert('庫存不足');
                                 }
                             },
                             error: function () {
-                                // 處理錯誤
                                 alert('檢查庫存時發生錯誤');
                         },
                         complete: function () {

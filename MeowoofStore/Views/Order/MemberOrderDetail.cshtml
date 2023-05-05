@@ -3,13 +3,20 @@
 @{
     ViewData["Title"] = "MeowoofStore-訂單明細";
     var orderNumber = Model.Select(n => n.OrderNumber).FirstOrDefault();
+    DateTime orderDate = ViewBag.OrderDate;
+
 }
 
 <h1>訂單明細</h1>
 
-<p> 
-    <h6>訂單編號 : @Html.DisplayFor(model => orderNumber)</h6>
-</p>
+<div class="row">
+    <div class="col-6">
+        <p><h6>訂單編號 : @Html.DisplayFor(model => orderNumber)</h6></p>
+    </div>
+    <div class="col-6 text-end">
+        <p>訂單日期: @orderDate.ToString()</p>
+    </div>
+</div>
 <table class="table">
     <thead>
         <tr>
@@ -28,6 +35,7 @@
         </tr>
     </thead>
     <tbody>
+        @{int totalSum=0;}
 @foreach (var item in Model) {
         <tr>
                 <td>
@@ -42,8 +50,21 @@
             <td>
                 @Html.DisplayFor(modelItem => item.TotalPrice)
             </td>
+            </tr>
+            totalSum += item.TotalPrice;
+        }
+
+        <tr>
+            <td>
+            </td>
+            <td>
+            </td>
+            <td>
+            </td>
+            <td>
+                共 @totalSum
+            </td>
         </tr>
-}
     </tbody>
 </table>
 <br />

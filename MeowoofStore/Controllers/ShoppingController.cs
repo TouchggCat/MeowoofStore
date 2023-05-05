@@ -96,7 +96,7 @@ namespace MeowoofStore.Controllers
                 OrderDate = DateTime.Now,
                 ReceiverName = receiverName,
                 OrderNumber = orderNumberGuid,
-                IsShopping = false,
+                IsShipping = false,
             };
         }
 
@@ -123,15 +123,6 @@ namespace MeowoofStore.Controllers
         {
             if (HttpContext.Session.Keys.Contains(SessionKey))
                 HttpContext.Session.Remove(SessionKey);
-        }
-
-        private List<ShoppingCartViewModel> GetShoppingCartListFromSessionOrNewCart()
-        {
-            if (!HttpContext.Session.Keys.Contains(ShoppingCartSessionKey.ShoppingCartListKey))
-                return new List<ShoppingCartViewModel>();
-
-            var jsonString = HttpContext.Session.GetString(ShoppingCartSessionKey.ShoppingCartListKey);
-            return JsonSerializer.Deserialize<List<ShoppingCartViewModel>>(jsonString);
         }
 
     }

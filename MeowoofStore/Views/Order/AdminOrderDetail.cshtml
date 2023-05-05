@@ -2,17 +2,23 @@
 
 @{
     ViewData["Title"] = "MeoWoof-管理訂單明細";
+    var orderNumber = Model.Select(n => n.OrderNumber).FirstOrDefault();
+    DateTime orderDate = ViewBag.OrderDate;
 }
 
 <h1>管理訂單明細</h1>
 
-
+<div class="row">
+    <div class="col-6">
+        <p><h6>訂單編號 : @Html.DisplayFor(model => orderNumber)</h6></p>
+    </div>
+    <div class="col-6 text-end">
+        <p>訂單日期: @orderDate.ToString()</p>
+    </div>
+</div>
 <table class="table">
     <thead>
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.OrderNumber)
-            </th>
             <th>
                 @Html.DisplayNameFor(model => model.Product.Name)
             </th>
@@ -25,15 +31,11 @@
             <th>
                 @Html.DisplayNameFor(model => model.TotalPrice)
             </th>
-            <th></th>
         </tr>
     </thead>
     <tbody>
 @foreach (var item in Model) {
         <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.OrderNumber)
-            </td>
             <td>
                 @Html.DisplayFor(modelItem => item.Product.Name)
             </td>
@@ -45,12 +47,6 @@
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.TotalPrice)
-            </td>
-
-            <td>
-                @Html.ActionLink("Edit", "Edit", new { /* id=item.PrimaryKey */ }) |
-                @Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |
-                @Html.ActionLink("Delete", "Delete", new { /* id=item.PrimaryKey */ })
             </td>
         </tr>
 }
