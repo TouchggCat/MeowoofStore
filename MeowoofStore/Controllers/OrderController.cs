@@ -52,8 +52,8 @@ namespace MeowoofStore.Controllers
 
             var orderDetail = _context.OrderDetail
                                   .Where(n => n.OrderNumber == OrderNumber).ToList();
-            if(orderDetail!=null&&orderDetail.Count>0)
-                _context.Remove(orderDetail);
+            if(orderDetail!=null)
+                _context.RemoveRange(orderDetail);                    // 刪除整個物件清單
 
             _context.SaveChanges();
             return RedirectToAction(nameof(List));
