@@ -29,7 +29,7 @@ namespace MeowoofStore.Controllers
         }
 
         [Authorize(Roles = nameof(RoleName.Administrator))]
-        public IActionResult AdminOrderDetail(Guid OrderNumber)
+        public IActionResult AdminOrderDetail(string OrderNumber)
         {
             var order = _context.Order
            .Where(n => n.OrderNumber == OrderNumber).SingleOrDefault();
@@ -43,7 +43,7 @@ namespace MeowoofStore.Controllers
         }
 
         [Authorize(Roles = nameof(RoleName.Administrator))]
-        public IActionResult AdminDeleteOrder(Guid OrderNumber)
+        public IActionResult AdminDeleteOrder(string OrderNumber)
         {
             var order = _context.Order
                                              .Where(n => n.OrderNumber == OrderNumber).SingleOrDefault();
@@ -71,7 +71,7 @@ namespace MeowoofStore.Controllers
             return View(order);
         }
 
-        public IActionResult MemberOrderDetail(Guid OrderNumber)
+        public IActionResult MemberOrderDetail(string OrderNumber)
         {
             var order = _context.Order
                 .Where(n =>n.OrderNumber == OrderNumber).SingleOrDefault();

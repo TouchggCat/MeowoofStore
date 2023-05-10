@@ -28,6 +28,9 @@
             <th>
                 @Html.DisplayNameFor(model => model.IsShipping)
             </th>
+            <th>
+                @Html.DisplayNameFor(model => model.IsPaid)
+            </th>
             <th></th>
         </tr>
     </thead>
@@ -52,6 +55,9 @@
                 <td>
                     <input asp-for="@item.IsShipping" type="checkbox" class="js-checkBox" order-id="@item.Id"/>
                 </td>
+                <th>
+                    @Html.DisplayFor(modelItem => item.IsPaid)
+                </th>
             <td>
                     <a asp-action="AdminOrderDetail" asp-route-OrderNumber="@item.OrderNumber">訂單明細</a> |
                     <a asp-action="AdminDeleteOrder" asp-route-OrderNumber="@item.OrderNumber" onclick="return confirm('確定刪除?')">刪除訂單</a>

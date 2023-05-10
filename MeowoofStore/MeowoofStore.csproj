@@ -29,10 +29,4 @@
     <Folder Include="wwwroot\Images\ProductImages\" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="AllPay.Payment.Integration">
-      <HintPath>..\..\AllPay.Payment.Integration.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
 </Project>

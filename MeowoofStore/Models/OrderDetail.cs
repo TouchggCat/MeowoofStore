@@ -9,7 +9,7 @@ namespace MeowoofStore.Models
 
         [StringLength(255)]
         [DisplayName("訂單編號")]
-        public Guid OrderNumber { get; set; }
+        public string? OrderNumber { get; set; }
 
         [DisplayName("數量")]
         public int Quantity { get; set; }

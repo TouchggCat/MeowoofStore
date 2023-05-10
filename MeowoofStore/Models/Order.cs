@@ -9,7 +9,7 @@ namespace MeowoofStore.Models
 
         [StringLength(255)]
         [DisplayName("訂單編號")]
-        public Guid OrderNumber { get; set; }
+        public string? OrderNumber { get; set; }
 
         [StringLength(255)]
         [DisplayName("收件人姓名")]
@@ -28,6 +28,9 @@ namespace MeowoofStore.Models
 
         [DisplayName("已寄送")]
         public bool IsShipping { get; set; }
+
+        [DisplayName("已付款")]
+        public bool IsPaid { get; set; }
 
         public int MemberId { get; set; }
 

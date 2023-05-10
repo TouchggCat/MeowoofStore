@@ -17,6 +17,10 @@ using System.Security.Claims;
 using MeowoofStore.Models;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper.Execution;
+using System.Web;
+using System.Text;
+using System.Security.Cryptography;
+using System.Diagnostics.Metrics;
 
 namespace MeowoofStore.Controllers
 {
@@ -54,18 +58,19 @@ namespace MeowoofStore.Controllers
         [HttpPost]
         public IActionResult CartView(string receiverName, string address, string email)
         {
+            var orderNumberGuid = Guid.NewGuid().ToString().Replace("-", "").Substring(0, 20);
             var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
-            var member = _context.Member?.Where(n=>n.Email == userEmail).SingleOrDefault();
-            Guid orderNumberGuid = Guid.NewGuid();
+            var member = _context.Member?.Where(n => n.Email == userEmail).SingleOrDefault();
+            var customerOrder = MappingOrder(address, email, member.Id, receiverName, orderNumberGuid);
+            _context.Order.Add(customerOrder);
 
-            var order = MappingOrder(address, email, member.Id, receiverName, orderNumberGuid);
-            _context.Order.Add(order);
+            var shoppingCartViewModels = GetShoppingCartItemsFromSession();
 
-            // 取得所有需要更新的商品 ID
-            List<ShoppingCartViewModel>? shoppingCartViewModels = GetShoppingCartItemsFromSession();
             var productIds = shoppingCartViewModels.Select(item => item.Id).ToList();
             // 從資料庫中查詢這些商品
             var products = _context.Product.Where(p => productIds.Contains(p.Id)).ToList();
+
+    
 
             foreach (var item in shoppingCartViewModels)
             {
@@ -78,15 +83,97 @@ namespace MeowoofStore.Controllers
                 var orderDetail = MappingOrderDetail(item.Id, orderNumberGuid, item.Price, item.Quantity, item.TotalPrice);
                 _context.OrderDetail.Add(orderDetail);
             }
-
             _context.SaveChanges();
+
             RemoveSession(ShoppingCartSessionKey.ShoppingCartListKey);
 
-            return RedirectToAction(nameof(OrderController.MemberOrder),ControllerName.Order);
+            return RedirectToAction(nameof(OrderController.MemberOrder), ControllerName.Order);
+
         }
+        public IActionResult PayForOrder(string orderNumber)
+        {
+            int sumTotalPrice = 0;
+            string allProductsName = "";
+            var orderdetail = _context.OrderDetail.Where(n => n.OrderNumber == orderNumber).Include(n=>n.Product).ToList();
+            foreach (var item in orderdetail)
+            {
+                allProductsName += item.Product.Name + "#";
+                sumTotalPrice += item.TotalPrice;
+            }
+            allProductsName.Substring(0, allProductsName.Length - 1);
 
+            string encodedOrderNumber = Convert.ToBase64String(Encoding.UTF8.GetBytes(orderNumber));
 
-        private Order MappingOrder(string address, string email, int memberId, string receiverName, Guid orderNumberGuid)
+            var website = "https://localhost:7072";
+
+            var order = new Dictionary<string, string>
+        {
+            //特店交易編號
+            { "MerchantTradeNo",  orderNumber},
+
+            //特店交易時間 yyyy/MM/dd HH:mm:ss
+            { "MerchantTradeDate",  DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss")},
+
+            //交易金額
+            { "TotalAmount",  sumTotalPrice.ToString()},
+
+            //交易描述
+            { "TradeDesc",  "無"},
+
+            //商品名稱
+            { "ItemName",  allProductsName},
+
+            //允許繳費有效天數(付款方式為 ATM 時，需設定此值)
+            { "ExpireDate",  "3"},
+
+            //自訂名稱欄位1
+            { "CustomField1",  ""},
+
+            //自訂名稱欄位2
+            { "CustomField2",  ""},
+
+            //綠界回傳付款資訊的至 此URL
+            { "ReturnURL",  $"{website}/api/Shopping/AddPayInfo"},
+
+            //使用者於綠界 付款完成後，綠界將會轉址至 此URL
+            { "OrderResultURL", $"{website}/Shopping/CompleteOrder?encodedOrderNumber={encodedOrderNumber}" },
+
+            //特店編號， 2000132 測試綠界編號
+            { "MerchantID",  "2000132"},
+
+            //忽略付款方式9
+            { "IgnorePayment",  "GooglePay#WebATM#CVS#BARCODE"},
+
+            //交易類型 固定填入 aio
+            { "PaymentType",  "aio"},
+
+            //選擇預設付款方式 固定填入 ALL
+            { "ChoosePayment",  "ALL"},
+
+            //CheckMacValue 加密類型 固定填入 1 (SHA256)
+            { "EncryptType",  "1"},
+        };
+
+            //檢查碼
+            order["CheckMacValue"] = GetCheckMacValue(order);
+
+            return View("CheckOut", order);
+        }
+        [AllowAnonymous]
+        public IActionResult CompleteOrder(string encodedOrderNumber)
+        {
+            string orderNumber = Encoding.UTF8.GetString(Convert.FromBase64String(encodedOrderNumber));
+
+            var order =_context.Order.Where(od=>od.OrderNumber == orderNumber).FirstOrDefault();
+            if (order != null)
+            {
+                order.IsPaid = true;
+                _context.SaveChanges();
+            }
+     
+            return RedirectToAction(nameof(OrderController.MemberOrder), ControllerName.Order);
+        }
+        private Order MappingOrder(string address, string email, int memberId, string receiverName, string orderNumberGuid)
         {
             return new Order()
             {
@@ -100,7 +187,7 @@ namespace MeowoofStore.Controllers
             };
         }
 
-        private OrderDetail MappingOrderDetail(int productId, Guid orderNumber, int price, int quantity, int totalPrice)
+        private OrderDetail MappingOrderDetail(int productId, string orderNumber, int price, int quantity, int totalPrice)
         {
             return new OrderDetail()
             {
@@ -119,11 +206,52 @@ namespace MeowoofStore.Controllers
             return shoppingCartItemList;
         }
 
+        /// <summary>
+        /// 取得 檢查碼
+        /// </summary>
+        private string GetCheckMacValue(Dictionary<string, string> order)
+        {
+            var param = order.Keys.OrderBy(x => x).Select(key => key + "=" + order[key]).ToList();
+
+            var checkValue = string.Join("&", param);
+
+            //測試用的 HashKey
+            var hashKey = "5294y06JbISpM5x9";
+
+            //測試用的 HashIV
+            var HashIV = "v77hoKGq4kWxNNIS";
+
+            checkValue = $"HashKey={hashKey}" + "&" + checkValue + $"&HashIV={HashIV}";
+
+            checkValue = HttpUtility.UrlEncode(checkValue).ToLower();
+
+            checkValue = GetSHA256(checkValue);
+
+            return checkValue.ToUpper();
+        }
+
+        /// <summary>
+        /// SHA256 編碼
+        /// </summary>
+        private string GetSHA256(string value)
+        {
+            var result = new StringBuilder();
+            var sha256 = SHA256.Create();
+            var bts = Encoding.UTF8.GetBytes(value);
+            var hash = sha256.ComputeHash(bts);
+
+            for (int i = 0; i < hash.Length; i++)
+            {
+                result.Append(hash[i].ToString("X2"));
+            }
+
+            return result.ToString();
+        }
+
         private void RemoveSession(string SessionKey)
         {
             if (HttpContext.Session.Keys.Contains(SessionKey))
                 HttpContext.Session.Remove(SessionKey);
         }
-
     }
 }

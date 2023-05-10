@@ -28,6 +28,9 @@
             <th>
                 @Html.DisplayNameFor(model => model.IsShipping)
             </th>
+            <th>
+                @Html.DisplayNameFor(model => model.IsPaid)
+            </th>
             <th></th>
         </tr>
     </thead>
@@ -55,6 +58,23 @@
                 }
                 @shippingState
             </td>
+                <td>
+                    @{
+                        string paidState = item.IsPaid == false ? "未付款" : "已付款";
+                    }
+                    @paidState
+                    @if(item.IsPaid==false)
+                    {
+                        <a class="btn btn-warning" asp-route-OrderNumber="@item.OrderNumber"
+                        asp-action="PayForOrder" asp-controller="Shopping">
+                            去付款
+                        </a>
+                    }
+                    else
+                    {
+                        <button class="btn btn-success" OrderNumber="@item.OrderNumber">已付款</button>
+                    }
+                </td>
             <td>
                     <a asp-action="MemberOrderDetail" asp-route-OrderNumber="@item.OrderNumber">訂單詳細</a>
             </td>
