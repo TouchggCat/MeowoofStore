@@ -48,25 +48,6 @@ namespace MeowoofStore.Controllers.Api
             return Ok(products);
         }
 
-        [HttpPost]
-        public async Task<ActionResult<Product>> CreateProduct(ProductViewModel viewModel)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest();
-
-            if (viewModel.Photo != null)
-            {
-               await _photoProcess.CreatePhoto<ProductViewModel>(viewModel, FolderPath._Images_ProductImages,
-                nameof(viewModel.Photo), nameof(viewModel.ImageString));
-            }
-            var product = _iMapper.Map<Product>(viewModel);
-            _context.Product.Add(product);
-            _context.SaveChanges();
-            viewModel.Id = product.Id;
-
-            return CreatedAtAction(nameof(GetProductsById), new { id = product.Id }, viewModel);
-        }
-
         [HttpDelete("{id}")]
         public  async Task<ActionResult> DeleteProductsById(int id ,string imageString)
         {
