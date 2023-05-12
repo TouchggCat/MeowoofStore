@@ -37,7 +37,7 @@
     <script>
         $(document).ready(function () {
 
-            $("#productsTable").DataTable({
+            var table= $("#productsTable").DataTable({
                 ajax:{
                     url: "/api/Products/",
                     dataSrc: ""
@@ -91,7 +91,7 @@
                         method:"Delete",
                         success:function(){
                             console.log("Success Deleted");
-                            dataTable.row(deleteButton.parents("tr")).remove().draw();
+                            table.row(deleteButton.parents("tr")).remove().draw();
                         }
                      });
                  }

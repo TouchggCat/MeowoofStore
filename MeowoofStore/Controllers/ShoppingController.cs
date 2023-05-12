@@ -90,22 +90,50 @@ namespace MeowoofStore.Controllers
             return RedirectToAction(nameof(OrderController.MemberOrder), ControllerName.Order);
 
         }
+
         public IActionResult PayForOrder(string orderNumber)
         {
             int sumTotalPrice = 0;
             string allProductsName = "";
-            var orderdetail = _context.OrderDetail.Where(n => n.OrderNumber == orderNumber).Include(n=>n.Product).ToList();
+            string spearator = "#";
+            int lastSeparator = 1;
+            var orderdetail = _context.OrderDetail.Where(n => n.OrderNumber == orderNumber).Include(n => n.Product).ToList();
             foreach (var item in orderdetail)
             {
-                allProductsName += item.Product.Name + "#";
+                allProductsName += item.Product.Name + spearator;
                 sumTotalPrice += item.TotalPrice;
             }
-            allProductsName.Substring(0, allProductsName.Length - 1);
+            allProductsName.Substring(0, allProductsName.Length - lastSeparator);
 
             string encodedOrderNumber = Convert.ToBase64String(Encoding.UTF8.GetBytes(orderNumber));
 
-            var website = "https://localhost:7072";
+            var currentWebsite = "https://localhost:7072";
 
+            Dictionary<string, string> order = SetOrderItemToDictionary(orderNumber, sumTotalPrice, allProductsName, encodedOrderNumber, currentWebsite);
+
+            //檢查碼
+            order["CheckMacValue"] = GetCheckMacValue(order);
+
+            return View(ViewName.CheckOut, order);
+        }
+
+        [AllowAnonymous]
+        public IActionResult CompleteOrder(string encodedOrderNumber)
+        {
+            string orderNumber = Encoding.UTF8.GetString(Convert.FromBase64String(encodedOrderNumber));
+
+            var order = _context.Order.Where(od => od.OrderNumber == orderNumber).FirstOrDefault();
+            if (order != null)
+            {
+                order.IsPaid = true;
+                _context.SaveChanges();
+            }
+
+            return RedirectToAction(nameof(OrderController.MemberOrder), ControllerName.Order);
+        }
+
+        private static Dictionary<string, string> SetOrderItemToDictionary(string orderNumber, int sumTotalPrice, string allProductsName, string encodedOrderNumber, string website)
+        {
             var order = new Dictionary<string, string>
         {
             //特店交易編號
@@ -129,9 +157,6 @@ namespace MeowoofStore.Controllers
             //自訂名稱欄位1
             { "CustomField1",  ""},
 
-            //自訂名稱欄位2
-            { "CustomField2",  ""},
-
             //綠界回傳付款資訊的至 此URL
             { "ReturnURL",  $"{website}/api/Shopping/AddPayInfo"},
 
@@ -153,26 +178,10 @@ namespace MeowoofStore.Controllers
             //CheckMacValue 加密類型 固定填入 1 (SHA256)
             { "EncryptType",  "1"},
         };
-
-            //檢查碼
-            order["CheckMacValue"] = GetCheckMacValue(order);
-
-            return View("CheckOut", order);
+            return order;
         }
-        [AllowAnonymous]
-        public IActionResult CompleteOrder(string encodedOrderNumber)
-        {
-            string orderNumber = Encoding.UTF8.GetString(Convert.FromBase64String(encodedOrderNumber));
 
-            var order =_context.Order.Where(od=>od.OrderNumber == orderNumber).FirstOrDefault();
-            if (order != null)
-            {
-                order.IsPaid = true;
-                _context.SaveChanges();
-            }
-     
-            return RedirectToAction(nameof(OrderController.MemberOrder), ControllerName.Order);
-        }
+
         private Order MappingOrder(string address, string email, int memberId, string receiverName, string orderNumberGuid)
         {
             return new Order()

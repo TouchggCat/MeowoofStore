@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Azure.Core;
 using MeowoofStore.Data;
+using MeowoofStore.Dtos;
 using MeowoofStore.Models;
 using MeowoofStore.Models.StringKeys;
 using MeowoofStore.Models.Utilities;
@@ -63,118 +64,108 @@ namespace MeowoofStore.Controllers.Api
             var product = _context.Product?.SingleOrDefault(n => n.Id == id);
             if (product != null)
             {
-                var viewModel = _lMapper.Map<AddToCartViewModel>(product);
-                viewModel.Quantity = defaultQuantity;
+                var dto = _lMapper.Map<AddToCartDto>(product);
+                dto.Quantity = defaultQuantity;
 
-                return Ok(viewModel);
+                return Ok(dto);
             }
 
             return NotFound("沒有此產品");
         }
 
         [HttpPost("/api/Shopping/AddToCart/")]
-        public ActionResult AddToCart(AddToCartViewModel viewModel)
+        public ActionResult AddToCart(AddToCartDto postedDto)
         {
-            var product = _context.Product?.SingleOrDefault(n => n.Id == viewModel.id);
+            var product = _context.Product?.SingleOrDefault(n => n.Id == postedDto.id);
             if (product == null)
                 return NotFound();
 
+            List<Dtos.ShoppingCartDto>? shoppingCartDtoList = GetShoppingCartListFromSessionOrNewCart();
 
-            List<ShoppingCartViewModel>? shoppingCartViewModelList = GetShoppingCartListFromSessionOrNewCart();
+            CheckSameItemAlreadyExistInCart(postedDto, product, shoppingCartDtoList);
 
-            var shoppingCartViewModel = shoppingCartViewModelList.FirstOrDefault(n => n.Id == viewModel.id);
-
-            if (shoppingCartViewModel == null)
-            {
-                shoppingCartViewModel = MappingToShoppingCartViewModel(product, viewModel);
-
-                shoppingCartViewModelList.Add(shoppingCartViewModel);
-            }
-            else
-            {
-                shoppingCartViewModel.Quantity += viewModel.Quantity;
-            }
-            // 檢查是否已經包含相同的商品，如果是，增加數量並退出方法
-            //if (IsSameItemAlreadyExistInCart(shoppingCartViewModelList, viewModel.id,viewModel.Quantity))
-            //    return Ok("AddedSameItem");
-
-            SaveShoppingCartListToSession(shoppingCartViewModelList);
+            SaveShoppingCartListToSession(shoppingCartDtoList);
 
             return Ok("SuccessAddToCart");
         }
 
+        
+
         [HttpGet("/api/Shopping/GetCartData")]
-        public ActionResult<IEnumerable<ShoppingCartViewModel>> GetCartData()
+        public ActionResult<IEnumerable<ShoppingCartDto>> GetCartData()
         {
             if (HttpContext.Session.Keys.Contains(ShoppingCartSessionKey.ShoppingCartListKey))
             {
-                List<ShoppingCartViewModel>? shoppingCartItemList = GetShoppingCartItemsFromSession();
-                return shoppingCartItemList;
+                List<ShoppingCartDto>? shoppingCartDtoList = GetShoppingCartItemsFromSession();
+                return shoppingCartDtoList;
             }
 
-            //return View(ViewName.EmptyCart, StringModel.ShoppingCartIsEmpty);
             return BadRequest();
         }
-        [HttpDelete("/api/Shopping/DeleteProductsById/{id}")]  //Copy來的
+
+        [HttpDelete("/api/Shopping/DeleteProductsById/{id}")] 
         public async Task<ActionResult> DeleteProductsById(int id)
         {
             var products = await _context.Product.SingleOrDefaultAsync(m => m.Id == id);
 
             if (products == null)
-                return NotFound();  
+                return NotFound();
 
-            List<ShoppingCartViewModel>? shoppingCartViewModels = GetShoppingCartItemsFromSession();
-            shoppingCartViewModels.RemoveAll(p => p.Product.Id == id);
+            List<ShoppingCartDto>? shoppingCartDtoList = GetShoppingCartItemsFromSession();
+            shoppingCartDtoList.RemoveAll(p => p.Product.Id == id);
 
-            if (shoppingCartViewModels.Count == 0)
+            if (shoppingCartDtoList.Count == 0)
                 RemoveSession(ShoppingCartSessionKey.ShoppingCartListKey);
             else
-            SaveShoppingCartListToSession(shoppingCartViewModels);
+            SaveShoppingCartListToSession(shoppingCartDtoList);
 
             return NoContent();
         }
 
-        private void SaveShoppingCartListToSession(List<ShoppingCartViewModel> shoppingCartViewModelList)
+        private void SaveShoppingCartListToSession(List<ShoppingCartDto> shoppingCartDtoList)
         {
-            var serializedJsonString = JsonSerializer.Serialize(shoppingCartViewModelList);
+            var serializedJsonString = JsonSerializer.Serialize(shoppingCartDtoList);
             HttpContext.Session.SetString(ShoppingCartSessionKey.ShoppingCartListKey, serializedJsonString);
         }
 
-        private List<ShoppingCartViewModel>? GetShoppingCartItemsFromSession()
+        private List<ShoppingCartDto>? GetShoppingCartItemsFromSession()
         {
             string? jsonString = HttpContext.Session.GetString(ShoppingCartSessionKey.ShoppingCartListKey);
-            List<ShoppingCartViewModel>? shoppingCartItemList = JsonSerializer.Deserialize<List<ShoppingCartViewModel>>(jsonString);
-            return shoppingCartItemList;
+            List<ShoppingCartDto>? shoppingCartDtoList = JsonSerializer.Deserialize<List<ShoppingCartDto>>(jsonString);
+            return shoppingCartDtoList;
         }
 
-        private List<ShoppingCartViewModel> GetShoppingCartListFromSessionOrNewCart()
+        private List<ShoppingCartDto> GetShoppingCartListFromSessionOrNewCart()
         {
             if (!HttpContext.Session.Keys.Contains(ShoppingCartSessionKey.ShoppingCartListKey))
-                return new List<ShoppingCartViewModel>();
+                return new List<ShoppingCartDto>();
 
             var jsonString = HttpContext.Session.GetString(ShoppingCartSessionKey.ShoppingCartListKey);
-            return JsonSerializer.Deserialize<List<ShoppingCartViewModel>>(jsonString);
+            return JsonSerializer.Deserialize<List<ShoppingCartDto>>(jsonString);
         }
 
-        private bool IsSameItemAlreadyExistInCart(List<ShoppingCartViewModel> shoppingCartViewModelList, int productId, int quantity)
+        private ShoppingCartDto MappingToShoppingCartDto(Product product, AddToCartDto addToCartDto)
         {
-            var existingItem = shoppingCartViewModelList.SingleOrDefault(x => x.Product.Id == productId);
-            if (existingItem != null)
+            var shoppingCartDto = _lMapper.Map<ShoppingCartDto>(addToCartDto);
+            shoppingCartDto.Product = product;
+            return shoppingCartDto;
+        }
+
+        private void CheckSameItemAlreadyExistInCart(AddToCartDto postedDto, Product? product, List<ShoppingCartDto> shoppingCartDtoList)
+        {
+            var shoppingCartDto = shoppingCartDtoList.FirstOrDefault(n => n.Id == postedDto.id);
+
+            if (shoppingCartDto == null)
             {
-                existingItem.Quantity += quantity;
-                SaveShoppingCartListToSession(shoppingCartViewModelList);
-                return true;
+                shoppingCartDto = MappingToShoppingCartDto(product, postedDto);
+
+                shoppingCartDtoList.Add(shoppingCartDto);
             }
-            return false;
+            else    //已有相同商品，增加數量
+            {
+                shoppingCartDto.Quantity += postedDto.Quantity;
+            }
         }
-
-        private ShoppingCartViewModel MappingToShoppingCartViewModel(Product product, AddToCartViewModel viewModel)
-        {
-            var shoppingCartViewModel = _lMapper.Map<ShoppingCartViewModel>(viewModel);
-            shoppingCartViewModel.Product = product;
-            return shoppingCartViewModel;
-        }
-
 
         private void RemoveSession(string SessionKey)
         {

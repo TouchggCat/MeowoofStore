@@ -56,7 +56,17 @@
                     <input asp-for="@item.IsShipping" type="checkbox" class="js-checkBox" order-id="@item.Id"/>
                 </td>
                 <th>
-                    @Html.DisplayFor(modelItem => item.IsPaid)
+                    <span asp-for="item.IsPaid" class="status">
+                        @if (item.IsPaid)
+                        {
+                            <a>已付</a>
+                        }
+                        else
+                        {
+                            <a>未付</a>
+                        }
+                    </span>
+
                 </th>
             <td>
                     <a asp-action="AdminOrderDetail" asp-route-OrderNumber="@item.OrderNumber">訂單明細</a> |
@@ -70,21 +80,32 @@
 @section scripts{
     <script>
         $(document).ready(function () {
-        $(".js-checkBox").on("click",function(){
-            var thisCheckBox=$(this);
-            $.ajax({
-                url:"/api/Order/"+thisCheckBox.attr("order-id"),
-                method:"POST",
-                success:function(data){
-                        if (data === "ChangedProperty")
-                    console.log("SuccessToChangeProperty");
-                },
-                error:function(){
+            // 监听点击事件并处理
+            $(document).on("click", ".js-checkBox", function (event) {
+                var value = $(".status a", $(this).closest("tr")).text(); 
+
+                if (value === "未付") {
+                    alert("尚未付款。");
+                    event.preventDefault(); 
+                    return false;
+                }
+
+                var thisCheckBox = $(this);
+                $.ajax({
+                    url: "/api/Order/" + thisCheckBox.attr("order-id"),
+                    method: "POST",
+                    success: function (data) {
+                        if (data === "ChangedProperty") {
+                            console.log("SuccessToChangeProperty");
+                        }
+                    },
+                    error: function () {
                         console.log("FailToChangeProperty");
                         alert('FailToChangeProperty');
-                }
-            })
-        })
-        })
+                    }
+                });
+            });
+        });
+
     </script>
 }

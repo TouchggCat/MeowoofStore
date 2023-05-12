@@ -10,5 +10,6 @@
 
         public static readonly string RegisterConfirmed = "RegisterConfirmed";
 
+        public static readonly string CheckOut = "CheckOut";
     }
 }
