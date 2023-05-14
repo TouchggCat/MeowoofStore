@@ -122,7 +122,7 @@ namespace MeowoofStore.Controllers
                                        .SingleOrDefaultAsync();
 
 
-            if (!IsValidLogin(viewModel, _context))
+            if (!IsValidLogin(viewModel))
                 return View(ViewName.RegisterConfirmed, StringModel.RegisterFailed);
 
             await SignInByClaimIdentity(member);
@@ -319,7 +319,7 @@ namespace MeowoofStore.Controllers
         }
 
 
-        private bool IsValidLogin(LoginViewModel loginViewModel, ApplicationDbContext _context)
+        private bool IsValidLogin(LoginViewModel loginViewModel)
         {
             var member = _context.Member.SingleOrDefault(m => m.Email == loginViewModel.Email);
 
@@ -332,7 +332,6 @@ namespace MeowoofStore.Controllers
             var hashPassword = PasswordAndSaltProcess
                                     .HashEnteredPassword(member.Salt, loginViewModel.Password);
 
-            // Compare the computed hash with the stored hash
             if (hashPassword != hashedPasswordFromDb)
                 return false;
 
