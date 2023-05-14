@@ -94,6 +94,8 @@ namespace MeowoofStore.Controllers
             if (member != null)
             {
                 member.IsEnabled = true;
+                _context.SaveChanges();
+
                 return View(ViewName.RegisterConfirmed, StringModel.RegisterConfirmed);
             }
 
@@ -121,7 +123,7 @@ namespace MeowoofStore.Controllers
 
 
             if (!IsValidLogin(viewModel, _context))
-                return NotFound();
+                return View(ViewName.RegisterConfirmed, StringModel.RegisterFailed);
 
             await SignInByClaimIdentity(member);
 
@@ -206,23 +208,33 @@ namespace MeowoofStore.Controllers
 
         private string ValidateToken(string token )
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_configuration["JWT:KEY"]);
-
-            var tokenValidationParameters = new TokenValidationParameters
+            try
             {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                ClockSkew = TimeSpan.Zero
-            };
-            SecurityToken validatedToken;
-            var claimsPrincipal = tokenHandler.ValidateToken(token, tokenValidationParameters, out validatedToken);
-            ClaimsIdentity claimsIdentity = claimsPrincipal.Identity as ClaimsIdentity;
-            var emailClaim = claimsIdentity.FindFirst(ClaimTypes.Email);
-            var email = emailClaim.Value;
-            return email;
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.ASCII.GetBytes(_configuration["JWT:KEY"]);
+
+                var tokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ClockSkew = TimeSpan.Zero
+                };
+
+                SecurityToken validatedToken;
+                var claimsPrincipal = tokenHandler.ValidateToken(token, tokenValidationParameters, out validatedToken);
+                ClaimsIdentity claimsIdentity = claimsPrincipal.Identity as ClaimsIdentity;
+                var emailClaim = claimsIdentity.FindFirst(ClaimTypes.Email);
+                var email = emailClaim.Value;
+
+                return email;
+            }
+            catch (SecurityTokenException ex)
+            {
+                // 處理驗證例外情況
+                throw new Exception("Token validation failed.", ex);
+            }
         }
 
         private string GenerateJWT(ClaimsIdentity claimsIdentity)
@@ -311,7 +323,7 @@ namespace MeowoofStore.Controllers
         {
             var member = _context.Member.SingleOrDefault(m => m.Email == loginViewModel.Email);
 
-            if (member == null)
+            if (member == null||member.IsEnabled==false)
                 return false;
 
             var hashedPasswordFromDb = member.Password;

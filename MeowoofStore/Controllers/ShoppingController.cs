@@ -47,9 +47,7 @@ namespace MeowoofStore.Controllers
         public IActionResult CartView()
         {
             if (HttpContext.Session.Keys.Contains(ShoppingCartSessionKey.ShoppingCartListKey))
-            {
                 return View();
-            }
 
             return View(ViewName.EmptyCart,StringModel.ShoppingCartIsEmpty);
         }
@@ -58,29 +56,17 @@ namespace MeowoofStore.Controllers
         [HttpPost]
         public IActionResult CartView(string receiverName, string address, string email)
         {
-            var orderNumberGuid = Guid.NewGuid().ToString().Replace("-", "").Substring(0, 20);
+            var orderNumber = Guid.NewGuid().ToString().Replace("-", "").Substring(0, 20);
             var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
             var member = _context.Member?.Where(n => n.Email == userEmail).SingleOrDefault();
-            var customerOrder = MappingOrder(address, email, member.Id, receiverName, orderNumberGuid);
+            var customerOrder = MappingOrder(address, email, member.Id, receiverName, orderNumber);
             _context.Order.Add(customerOrder);
 
             var shoppingCartViewModels = GetShoppingCartItemsFromSession();
 
-            var productIds = shoppingCartViewModels.Select(item => item.Id).ToList();
-            // 從資料庫中查詢這些商品
-            var products = _context.Product.Where(p => productIds.Contains(p.Id)).ToList();
-
-    
-
             foreach (var item in shoppingCartViewModels)
             {
-                var product = products.FirstOrDefault(p => p.Id == item.Id);
-                if (product != null)
-                    product.Stock -= item.Quantity;
-
-                _context.Product.Update(product);
-
-                var orderDetail = MappingOrderDetail(item.Id, orderNumberGuid, item.Price, item.Quantity, item.TotalPrice);
+                var orderDetail = MappingOrderDetail(item.Id, orderNumber, item.Price, item.Quantity, item.TotalPrice);
                 _context.OrderDetail.Add(orderDetail);
             }
             _context.SaveChanges();
@@ -88,33 +74,32 @@ namespace MeowoofStore.Controllers
             RemoveSession(ShoppingCartSessionKey.ShoppingCartListKey);
 
             return RedirectToAction(nameof(OrderController.MemberOrder), ControllerName.Order);
-
         }
 
         public IActionResult PayForOrder(string orderNumber)
         {
             int sumTotalPrice = 0;
             string allProductsName = "";
-            string spearator = "#";
+            string separator = "#";
             int lastSeparator = 1;
+            string currentWebsite = "https://localhost:7072";
+
             var orderdetail = _context.OrderDetail.Where(n => n.OrderNumber == orderNumber).Include(n => n.Product).ToList();
             foreach (var item in orderdetail)
             {
-                allProductsName += item.Product.Name + spearator;
+                allProductsName += item.Product.Name + separator;
                 sumTotalPrice += item.TotalPrice;
             }
             allProductsName.Substring(0, allProductsName.Length - lastSeparator);
 
             string encodedOrderNumber = Convert.ToBase64String(Encoding.UTF8.GetBytes(orderNumber));
 
-            var currentWebsite = "https://localhost:7072";
-
-            Dictionary<string, string> order = SetOrderItemToDictionary(orderNumber, sumTotalPrice, allProductsName, encodedOrderNumber, currentWebsite);
+            Dictionary<string, string> orderDictionary = SetOrderItemToDictionary(orderNumber, sumTotalPrice, allProductsName, encodedOrderNumber, currentWebsite);
 
             //檢查碼
-            order["CheckMacValue"] = GetCheckMacValue(order);
+            orderDictionary["CheckMacValue"] = GetCheckMacValue(orderDictionary);
 
-            return View(ViewName.CheckOut, order);
+            return View(ViewName.CheckOut, orderDictionary);
         }
 
         [AllowAnonymous]
@@ -122,19 +107,42 @@ namespace MeowoofStore.Controllers
         {
             string orderNumber = Encoding.UTF8.GetString(Convert.FromBase64String(encodedOrderNumber));
 
-            var order = _context.Order.Where(od => od.OrderNumber == orderNumber).FirstOrDefault();
-            if (order != null)
-            {
-                order.IsPaid = true;
-                _context.SaveChanges();
-            }
+            SubstractQuantityFromStock(orderNumber);
+
+            ChangeIsPaidPropertyInOrder(orderNumber);
+
+            _context.SaveChanges();
 
             return RedirectToAction(nameof(OrderController.MemberOrder), ControllerName.Order);
         }
 
+        private void ChangeIsPaidPropertyInOrder(string orderNumber)
+        {
+            var order = _context.Order.Where(od => od.OrderNumber == orderNumber).FirstOrDefault();
+            if (order != null)
+                order.IsPaid = true;
+        }
+
+        private void SubstractQuantityFromStock(string orderNumber)
+        {
+            var productIds = _context.OrderDetail.Select(n => n.ProductId).ToList(); ;
+            // 從資料庫中找到訂單裡的產品
+            var products = _context.Product.Where(p => productIds.Contains(p.Id)).ToList();
+            var orderDetails = _context.OrderDetail.Include(n => n.Product).Where(p => p.OrderNumber == orderNumber).ToList();
+
+            foreach (var item in orderDetails)
+            {
+                var product = products.Where(n => n.Id == item.ProductId).FirstOrDefault();
+                if (product != null)
+                    product.Stock -= item.Quantity;
+
+                _context.Product.Update(product);
+            }
+        }
+
         private static Dictionary<string, string> SetOrderItemToDictionary(string orderNumber, int sumTotalPrice, string allProductsName, string encodedOrderNumber, string website)
         {
-            var order = new Dictionary<string, string>
+            var orderDictionary = new Dictionary<string, string>
         {
             //特店交易編號
             { "MerchantTradeNo",  orderNumber},
@@ -178,7 +186,7 @@ namespace MeowoofStore.Controllers
             //CheckMacValue 加密類型 固定填入 1 (SHA256)
             { "EncryptType",  "1"},
         };
-            return order;
+            return orderDictionary;
         }
 
 
@@ -218,9 +226,9 @@ namespace MeowoofStore.Controllers
         /// <summary>
         /// 取得 檢查碼
         /// </summary>
-        private string GetCheckMacValue(Dictionary<string, string> order)
+        private string GetCheckMacValue(Dictionary<string, string> orderDictionary)
         {
-            var param = order.Keys.OrderBy(x => x).Select(key => key + "=" + order[key]).ToList();
+            var param = orderDictionary.Keys.OrderBy(x => x).Select(key => key + "=" + orderDictionary[key]).ToList();
 
             var checkValue = string.Join("&", param);
 
