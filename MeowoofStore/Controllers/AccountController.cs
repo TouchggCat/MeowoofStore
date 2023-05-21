@@ -51,14 +51,9 @@ namespace MeowoofStore.Controllers
             var member = _IMapper.Map<Member>(viewModel);
             member.IsEnabled = false;
 
-            var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Email,member.Email)
-            };
+            var callbackUrl = $"https://localhost:7072/Account/RegisterConfirmed?token=";
+            callbackUrl=AddTokenToCallbackUrl(member,callbackUrl);
 
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            string token = GenerateJWT(claimsIdentity);
-            var callbackUrl = $"https://localhost:7072/Account/RegisterConfirmed?token={token}";
             var mailBody = $"<h1>MeoWoof會員一{member.MemberName}，您好:</h1>" +
                                          $"<br><h2>請點擊連結完成註冊<a href='{callbackUrl}'>請點我</a></h2>" +
                                          $"<br>" +
@@ -86,21 +81,22 @@ namespace MeowoofStore.Controllers
             return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);
         }
 
-        public IActionResult RegisterConfirmed(string token)
+        public async Task <IActionResult> RegisterConfirmed(string token)
         {
             string email = ValidateToken(token);
 
-            var member = _context.Member.Where(m => m.Email == email).FirstOrDefault();
+            var member = await _context.Member.Where(m => m.Email == email).FirstOrDefaultAsync();
             if (member != null)
             {
-                member.IsEnabled = true;
-                _context.SaveChanges();
+                await Set_IsEnable_PropertyToTrue(member);
 
                 return View(ViewName.RegisterConfirmed, StringModel.RegisterConfirmed);
             }
 
             return View(ViewName.RegisterConfirmed, StringModel.RegisterFailed);
         }
+
+
 
         public IActionResult Login(string returnUrl)
         {
@@ -152,7 +148,8 @@ namespace MeowoofStore.Controllers
             if (member == null)
                 return Content("<script>alert('未註冊的帳號，請確認輸入是否正確');window.location.href='https://localhost:7072/Account/Login'</script>", "text/html", System.Text.Encoding.UTF8);
 
-            string callbackUrl = AddTokenToCallbackUrl(member);
+            var callbackUrl = "https://localhost:7072/Account/ResetPassword?token=";
+            callbackUrl = AddTokenToCallbackUrl(member, callbackUrl);
             var mailBody = $"<h1>MeoWoof會員一{member.MemberName}，您好:</h1><br><h2>如欲重新設定密碼<a href='{callbackUrl}'>請點我</a></h2>";
             var mailSubject = "[MeoWoof會員]一密碼重設通知信";
             MailMessage mail = IntegrateMailMessage(userEmail, mailSubject, mailBody);
@@ -180,8 +177,9 @@ namespace MeowoofStore.Controllers
 
             string email = ValidateToken(viewModel.Token);
 
-            var member = _context.Member.Where(m => m.Email == email).FirstOrDefault();
+            var member = await _context.Member.Where(m => m.Email == email).FirstOrDefaultAsync();
 
+            await Set_IsEnable_PropertyToTrue(member);
             try
             {
                 byte[] salt = PasswordAndSaltProcess.SaltGenerator();
@@ -199,8 +197,13 @@ namespace MeowoofStore.Controllers
             }
             return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);
         }
+        private async Task Set_IsEnable_PropertyToTrue(Member? member)
+        {
+            member.IsEnabled = true;
+            await _context.SaveChangesAsync();
+        }
 
-        private string AddTokenToCallbackUrl(Member? member)
+        private string AddTokenToCallbackUrl(Member? member,string callbackUrl)
         {
             var claims = new List<Claim>
             {
@@ -209,7 +212,7 @@ namespace MeowoofStore.Controllers
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             string token = GenerateJWT(claimsIdentity);
-            var callbackUrl = $"https://localhost:7072/Account/ResetPassword?token={token}";
+            callbackUrl += token;
             return callbackUrl;
         }
 
