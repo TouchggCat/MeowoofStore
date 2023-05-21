@@ -64,7 +64,7 @@ namespace MeowoofStore.Controllers
                                          $"<br>" +
                                          $"<h2>如未註冊請忽略本信件</h2>";
             var mailSubject = "[MeoWoof會員]一註冊確認信";
-            MailMessage mail = SetMailMessage(viewModel.Email, mailSubject, mailBody);
+            MailMessage mail = IntegrateMailMessage(viewModel.Email, mailSubject, mailBody);
             SendMail(mail);
 
             try
@@ -131,7 +131,6 @@ namespace MeowoofStore.Controllers
             if (Url.IsLocalUrl(viewModel.ReturnUrl))
                 return Redirect(viewModel.ReturnUrl);
 
-            // 如果上一頁的 URL 不是本網站的網址，則返回首頁
             return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);
         }
 
@@ -153,22 +152,17 @@ namespace MeowoofStore.Controllers
             if (member == null)
                 return Content("<script>alert('未註冊的帳號，請確認輸入是否正確');window.location.href='https://localhost:7072/Account/Login'</script>", "text/html", System.Text.Encoding.UTF8);
 
-            var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Email,member.Email)
-            };
-
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            string token = GenerateJWT(claimsIdentity);
-            var callbackUrl = $"https://localhost:7072/Account/ResetPassword?token={token}";
+            string callbackUrl = AddTokenToCallbackUrl(member);
             var mailBody = $"<h1>MeoWoof會員一{member.MemberName}，您好:</h1><br><h2>如欲重新設定密碼<a href='{callbackUrl}'>請點我</a></h2>";
-            var mailSubject= "[MeoWoof會員]一密碼重設通知信";
-            MailMessage mail = SetMailMessage(userEmail, mailSubject,mailBody);
+            var mailSubject = "[MeoWoof會員]一密碼重設通知信";
+            MailMessage mail = IntegrateMailMessage(userEmail, mailSubject, mailBody);
             SendMail(mail);
 
-            return Content("<script>alert('信件已送出，請至信箱查看');window.location.href='https://localhost:7072/'</script>", "text/html", System.Text.Encoding.UTF8); 
-                                                                                                                                                                //window.location.href跳轉業面
+            return Content("<script>alert('信件已送出，請至信箱查看');window.location.href='https://localhost:7072/'</script>", "text/html", System.Text.Encoding.UTF8);
+            //window.location.href跳轉業面
         }
+
+
 
         public IActionResult ResetPassword(string token)
         {
@@ -204,6 +198,19 @@ namespace MeowoofStore.Controllers
                 ModelState.AddModelError("", "重設密碼發生錯誤，請稍後再試。");
             }
             return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);
+        }
+
+        private string AddTokenToCallbackUrl(Member? member)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Email,member.Email)
+            };
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            string token = GenerateJWT(claimsIdentity);
+            var callbackUrl = $"https://localhost:7072/Account/ResetPassword?token={token}";
+            return callbackUrl;
         }
 
         private string ValidateToken(string token )
@@ -277,7 +284,7 @@ namespace MeowoofStore.Controllers
             }
         }
 
-        private static MailMessage SetMailMessage(string userEmail,string mailSubject,string mailBody)
+        private static MailMessage IntegrateMailMessage(string userEmail,string mailSubject,string mailBody)
         {
             MailMessage mail = new MailMessage();
             mail.From = new MailAddress(SendingMailServiceKey.sendMailServiceAccount, "MeoWoofStore");   //前面是發信email後面是顯示的名稱
