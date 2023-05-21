@@ -55,7 +55,7 @@
                 </div>
                 <div class="mb-3">
                     <label for="exampleInputPassword1" class="form-label">數量</label>
-                    <input class="form-control" id="js-quantity" name="address" required>
+                    <input class="form-control numberOnly" id="js-quantity" name="address" required>
                 </div>
             </div>
             <div class="modal-footer">
@@ -203,7 +203,13 @@
                         });
 
                     })
-                  
+
+            $(".numberOnly").on("keypress keyup blur", function (event) {
+                $(this).val($(this).val().replace(/[^\d].+/, ""));
+                if ((event.which < 48 || event.which > 57)) {
+                    event.preventDefault();
+                }
+            });
             });
             
     </script>
