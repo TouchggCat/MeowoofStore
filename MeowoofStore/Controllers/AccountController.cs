@@ -187,9 +187,7 @@ namespace MeowoofStore.Controllers
 
                 await SaveSaltAndPasswordToDB(member, salt, hashPassword);
 
-                await SignInByClaimIdentity(member);
-
-                return RedirectToAction(nameof(HomeController.Index), ControllerName.Home);
+                return RedirectToAction(nameof(Login));
             }
             catch (Exception ex)
             {

@@ -99,6 +99,7 @@
             var dataTable=$("#cartTable").DataTable({
                 "paging": false, // 禁用分頁功能
                 "info": false, // 禁用左下顯示幾筆功能
+                "searching": false,
                  "lengthMenu":false,
                 ajax: {
                     url: "/api/Shopping/GetCartData/",
@@ -124,7 +125,6 @@
                         }
                     }],
                 language: {
-                    search: "搜尋",
                     emptyTable: "無資料"
                 },
                 initComplete: function () {

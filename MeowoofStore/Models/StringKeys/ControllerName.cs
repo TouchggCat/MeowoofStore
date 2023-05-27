@@ -7,5 +7,6 @@
         public static readonly string Order = "Order";
 
         public static readonly string Shopping = "Shopping";
+
     }
 }

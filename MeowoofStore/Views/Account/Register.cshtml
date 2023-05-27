@@ -1,4 +1,4 @@
-﻿@model MeowoofStore.Models.Member
+﻿@model MeowoofStore.ViewModels.RegisterViewModel
 
 @{
     ViewData["Title"] = "MeoWoof-註冊";
@@ -33,7 +33,6 @@
             </div>
             <br />
             <div class="form-group">
-                @Html.HiddenFor(model => model.Role)
                 @Html.AntiForgeryToken()
                 <input type="submit" value="註冊" class="btn btn-primary" />
             </div>
