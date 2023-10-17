@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MeowoofStore.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230426112537_PopulateDefaultUsers")]
-    partial class PopulateDefaultUsers
+    [Migration("20231017093412_PopulateDefaultUsersNew")]
+    partial class PopulateDefaultUsersNew
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -42,6 +42,9 @@ namespace MeowoofStore.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit");
 
                     b.Property<string>("MemberName")
                         .IsRequired()
@@ -83,7 +86,10 @@ namespace MeowoofStore.Data.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<bool>("IsShopping")
+                    b.Property<bool>("IsPaid")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsShipping")
                         .HasColumnType("bit");
 
                     b.Property<int>("MemberId")
@@ -92,9 +98,9 @@ namespace MeowoofStore.Data.Migrations
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("OrderNumber")
+                    b.Property<string>("OrderNumber")
                         .HasMaxLength(255)
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("ReceiverName")
                         .HasMaxLength(255)
@@ -115,9 +121,9 @@ namespace MeowoofStore.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<Guid>("OrderNumber")
+                    b.Property<string>("OrderNumber")
                         .HasMaxLength(255)
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<int>("Price")
                         .HasColumnType("int");
